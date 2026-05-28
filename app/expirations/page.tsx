@@ -5,6 +5,7 @@ import { AppShell } from '@/components/vendor-pass/app-shell';
 import { PageHeader } from '@/components/vendor-pass/page-header';
 import { StatusBadge } from '@/components/vendor-pass/status-badge';
 import { EmptyState } from '@/components/vendor-pass/empty-state';
+import { ExportExpirationsButton } from '@/components/vendor-pass/export-expirations-button';
 import { CalendarClock, ChevronRight, Calendar } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -134,19 +135,22 @@ export default async function ExpirationsPage({
           title="Vencimientos"
           description="Documentos vencidos y por vencer"
           actions={
-            <div className="flex items-center gap-1 p-1 bg-secondary rounded-lg">
-              {windowLinks.map(w => (
-                <Link
-                  key={w.value}
-                  href={`/expirations?window=${w.value}`}
-                  className={cn(
-                    'px-2.5 py-1 rounded-md text-xs font-medium transition-colors min-h-11 inline-flex items-center',
-                    win === w.value ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
-                  )}
-                >
-                  {w.label}
-                </Link>
-              ))}
+            <div className="flex items-center gap-2 flex-wrap">
+              <ExportExpirationsButton windowDays={win} />
+              <div className="flex items-center gap-1 p-1 bg-secondary rounded-lg">
+                {windowLinks.map(w => (
+                  <Link
+                    key={w.value}
+                    href={`/expirations?window=${w.value}`}
+                    className={cn(
+                      'px-2.5 py-1 rounded-md text-xs font-medium transition-colors min-h-11 inline-flex items-center',
+                      win === w.value ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
+                    )}
+                  >
+                    {w.label}
+                  </Link>
+                ))}
+              </div>
             </div>
           }
         />
