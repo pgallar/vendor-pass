@@ -2,9 +2,9 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getStore, getStoreSource } from '@/lib/arkiv/validations';
-import { AppShell } from '@/components/vendor-pass/app-shell';
-import { PageHeader } from '@/components/vendor-pass/page-header';
+import { PublicShell } from '@/components/vendor-pass/public-shell';
 import { StatusBadge } from '@/components/vendor-pass/status-badge';
+import { CopyVerifyLink } from '@/components/vendor-pass/copy-verify-link';
 import { ShieldCheck, Calendar, Hash, Key, AlertCircle } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
@@ -43,14 +43,14 @@ export default async function VerifyPage({ params }: { params: Promise<{ documen
   const { entity, entityKey } = lookup;
 
   return (
-    <AppShell>
-      <div className="flex flex-col gap-6 max-w-lg mx-auto w-full">
-        <PageHeader
-          title="Verificación Arkiv"
-          description="Estado de cumplimiento consultado desde el registro verificable"
-          backHref={`/vendors/${entity.vendorId}`}
-          backLabel="Volver al proveedor"
-        />
+    <PublicShell>
+      <div className="flex flex-col gap-6">
+        <div>
+          <h1 className="text-xl font-bold text-foreground">Verificación Arkiv</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Estado de cumplimiento consultado desde el registro verificable
+          </p>
+        </div>
 
         {source === 'memory' && (
           <div className="flex items-start gap-3 p-4 rounded-xl bg-secondary border border-border">
@@ -106,6 +106,8 @@ export default async function VerifyPage({ params }: { params: Promise<{ documen
             </p>
           )}
 
+          <CopyVerifyLink documentId={documentId} />
+
           {entityKey && (
             <CopyField label="Entity key (Arkiv)" value={entityKey} />
           )}
@@ -133,8 +135,17 @@ export default async function VerifyPage({ params }: { params: Promise<{ documen
               Ver evidencia
             </Link>
           )}
+
+          {entity.vendorId && (
+            <Link
+              href={`/verify/vendor/${entity.vendorId}`}
+              className="text-xs text-primary font-medium"
+            >
+              Ver pasaporte del proveedor
+            </Link>
+          )}
         </section>
       </div>
-    </AppShell>
+    </PublicShell>
   );
 }
