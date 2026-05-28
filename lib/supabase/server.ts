@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
-import { getSupabaseAnonKey, getSupabaseServerAuthUrl, supabaseAuthCookieOptions } from '@/lib/supabase/env';
+import { getSupabaseAnonKey, getSupabaseServerAuthUrl, getSupabaseUrl, supabaseAuthCookieOptions } from '@/lib/supabase/env';
 
 function adminClientOptions() {
   const opts: Parameters<typeof createSupabaseClient>[2] = {
