@@ -1,11 +1,15 @@
 import { createHash, randomUUID } from 'crypto';
 import { NextResponse } from 'next/server';
+import { requireUser } from '@/lib/supabase/api-auth';
 import { isAllowedMime, MAX_BYTES, uploadEvidence } from '@/lib/storage/s3';
 
 export async function POST(req: Request) {
   if (!process.env.S3_ENDPOINT) {
     return NextResponse.json({ error: 'Almacenamiento S3 no configurado' }, { status: 503 });
   }
+
+  const auth = await requireUser();
+  if (auth.error) return auth.error;
 
   const form = await req.formData();
   const file = form.get('file');
@@ -17,6 +21,16 @@ export async function POST(req: Request) {
   if (typeof vendorId !== 'string' || !vendorId.trim()) {
     return NextResponse.json({ error: 'vendorId requerido' }, { status: 400 });
   }
+
+  const { data: vendor, error: vendorErr } = await auth.supabase
+    .from('vendors')
+    .select('id')
+    .eq('id', vendorId)
+    .single();
+  if (vendorErr || !vendor) {
+    return NextResponse.json({ error: 'Proveedor no encontrado' }, { status: 404 });
+  }
+
   if (file.size > MAX_BYTES) {
     return NextResponse.json({ error: 'Archivo demasiado grande (máx. 10 MB)' }, { status: 400 });
   }
