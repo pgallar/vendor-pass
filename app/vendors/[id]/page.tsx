@@ -1,14 +1,15 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
-import { documentStatus, vendorStatus } from '@/lib/status';
+import { documentStatus, vendorStatus, vendorComplianceReasons } from '@/lib/status';
 import { AppShell } from '@/components/vendor-pass/app-shell';
 import { PageHeader } from '@/components/vendor-pass/page-header';
 import { StatusBadge } from '@/components/vendor-pass/status-badge';
 import { DocumentList } from '@/components/vendor-pass/document-list';
+import { VendorComplianceSummary } from '@/components/vendor-pass/vendor-compliance-summary';
 import { Button } from '@/components/vendor-pass/button';
 import type { Vendor, VendorDocument } from '@/lib/types';
-import { Building2, Mail, User, MapPin, Calendar, Plus } from 'lucide-react';
+import { Building2, Mail, User, MapPin, Calendar, Plus, Pencil, ShieldCheck } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -44,6 +45,7 @@ export default async function VendorDetailPage({ params }: { params: Promise<{ i
   const ds: VendorDocument[] = documents ?? [];
   const v = vendor as Vendor;
   const status = vendorStatus(ds);
+  const reasons = vendorComplianceReasons(ds);
   const enriched = ds.map(d => ({ ...d, status: documentStatus(d) }));
   const vencidos = enriched.filter(d => d.status === 'vencido').length;
   const porVencer = enriched.filter(d => d.status === 'por_vencer').length;
@@ -59,6 +61,22 @@ export default async function VendorDetailPage({ params }: { params: Promise<{ i
             { label: 'Proveedores', href: '/vendors' },
             { label: v.name },
           ]}
+          actions={
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" asChild>
+                <Link href={`/verify/vendor/${v.id}`} className="inline-flex items-center gap-1.5">
+                  <ShieldCheck size={13} aria-hidden="true" />
+                  Pasaporte
+                </Link>
+              </Button>
+              <Button variant="outline" size="sm" asChild>
+                <Link href={`/vendors/${v.id}/edit`} className="inline-flex items-center gap-1.5">
+                  <Pencil size={13} aria-hidden="true" />
+                  Editar
+                </Link>
+              </Button>
+            </div>
+          }
         />
 
         <div className="bg-card border border-border rounded-xl p-4 flex items-center justify-between gap-3">
@@ -80,6 +98,8 @@ export default async function VendorDetailPage({ params }: { params: Promise<{ i
             <p className="text-xs text-muted-foreground">documentos</p>
           </div>
         </div>
+
+        <VendorComplianceSummary status={status} reasons={reasons} />
 
         {(vencidos > 0 || porVencer > 0) && (
           <div className="flex items-center gap-2 flex-wrap">
