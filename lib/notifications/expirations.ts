@@ -6,6 +6,7 @@ import {
 import { documentStatus } from '@/lib/status';
 import { supabaseAdmin } from '@/lib/supabase/server';
 import type { VendorDocument } from '@/lib/types';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 export type NotificationType = 'expiring_30d' | 'expiring_7d' | 'expired';
 
@@ -41,8 +42,9 @@ export function classifyExpirationAlert(
 
 export async function sendExpirationNotifications(
   now = new Date(),
+  supabase?: SupabaseClient,
 ): Promise<SendExpirationResult> {
-  const sb = supabaseAdmin();
+  const sb = supabase ?? supabaseAdmin();
   const result: SendExpirationResult = { sent: 0, skipped: 0, errors: [] };
 
   const [{ data: docs, error: docsErr }, { data: vendors, error: vendorsErr }, { data: sentRows, error: sentErr }] =
