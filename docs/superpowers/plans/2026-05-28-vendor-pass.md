@@ -6,6 +6,8 @@
 
 **Architecture:** Next.js 14 App Router monorepo. Supabase (Postgres + Auth + Storage) is the operational store for `vendors` and `documents`. Arkiv (TypeScript SDK) stores a parallel `vendor_document_validation` entity per document for verifiable, queryable compliance state. A pure status engine (`lib/status.ts`) computes document and vendor status from dates + criticality. API routes in Next.js mediate writes: every document mutation writes Supabase first, then mirrors to Arkiv. UI is Tailwind + minimal server components.
 
+**Mobile-first UX (HARD REQUIREMENT):** The app must be usable from a phone first and scale up to tablet/desktop. All pages use a mobile-first responsive layout (base = phone, `sm:` / `md:` / `lg:` breakpoints add columns/density). Tables collapse into stacked cards on `< sm` (640px). Touch targets are ≥ 44px. The viewport meta is set, forms use mobile-friendly input types (`type="date"`, `inputMode="email"`), and primary navigation collapses into a top bar with icon links on phones. Test every page at 360×640 (small Android), 390×844 (iPhone 13/14), 768 (iPad), and 1280 (desktop).
+
 **Tech Stack:** Next.js 14 (App Router) + TypeScript + Tailwind CSS, Supabase JS client (`@supabase/supabase-js`, `@supabase/ssr`), Arkiv TypeScript SDK, Vitest for unit tests, Docker Compose for local orchestration (Supabase local stack via `supabase` CLI is preferred, but we expose a `docker-compose.yml` for predictable bring-up).
 
 ---
@@ -127,7 +129,36 @@ ARKIV_NAMESPACE=vendor_pass
 
 ```tsx
 export default function Home() {
-  return <main className="p-8"><h1 className="text-2xl font-bold">VendorPass</h1></main>;
+  return <main className="p-4 sm:p-8"><h1 className="text-2xl font-bold">VendorPass</h1></main>;
+}
+```
+
+- [ ] **Step 6b: Configure mobile viewport in root layout**
+
+Edit `app/layout.tsx` to export viewport metadata and ensure the root uses mobile-friendly defaults:
+
+```tsx
+import type { Metadata, Viewport } from 'next';
+import './globals.css';
+
+export const metadata: Metadata = {
+  title: 'VendorPass',
+  description: 'Vigencia operativa verificable',
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  themeColor: '#ffffff',
+};
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="es">
+      <body className="min-h-dvh bg-gray-50 text-gray-900 antialiased">{children}</body>
+    </html>
+  );
 }
 ```
 
@@ -948,23 +979,60 @@ export function VendorCard({ vendor }: { vendor: VendorWithStatus }) {
 }
 ```
 
-- [ ] **Step 4: DocumentRow**
+- [ ] **Step 4: DocumentRow (responsive: card on mobile, row on sm+)**
 
-Create `components/DocumentRow.tsx`:
+Create `components/DocumentRow.tsx`. We export both a `<tr>` for desktop tables and a `<DocumentCard>` for mobile lists, and a `DocumentList` wrapper that picks the right one via Tailwind responsive classes.
+
 ```tsx
 import type { VendorDocument, DocumentStatus } from '@/lib/types';
 import { StatusBadge } from './StatusBadge';
 
-export function DocumentRow({ doc }: { doc: VendorDocument & { status: DocumentStatus } }) {
+type Doc = VendorDocument & { status: DocumentStatus };
+
+export function DocumentList({ docs }: { docs: Doc[] }) {
   return (
-    <tr className="border-b">
-      <td className="py-2">{doc.document_name}</td>
-      <td className="py-2 text-sm text-gray-600">{doc.document_type}</td>
-      <td className="py-2">{doc.issued_at}</td>
-      <td className="py-2">{doc.expires_at}</td>
-      <td className="py-2">{doc.criticality === 'critical' ? 'Crítico' : 'Normal'}</td>
-      <td className="py-2"><StatusBadge status={doc.status} /></td>
-    </tr>
+    <>
+      {/* Mobile: stacked cards */}
+      <ul className="sm:hidden space-y-2">
+        {docs.map(d => (
+          <li key={d.id} className="border rounded-lg p-3 bg-white">
+            <div className="flex justify-between items-start gap-2">
+              <div className="min-w-0">
+                <div className="font-medium truncate">{d.document_name}</div>
+                <div className="text-xs text-gray-500">{d.document_type}</div>
+              </div>
+              <StatusBadge status={d.status} />
+            </div>
+            <dl className="grid grid-cols-2 gap-x-3 gap-y-1 mt-2 text-xs">
+              <dt className="text-gray-500">Emisión</dt><dd>{d.issued_at}</dd>
+              <dt className="text-gray-500">Vence</dt><dd>{d.expires_at}</dd>
+              <dt className="text-gray-500">Criticidad</dt><dd>{d.criticality === 'critical' ? 'Crítico' : 'Normal'}</dd>
+            </dl>
+          </li>
+        ))}
+      </ul>
+
+      {/* Tablet/desktop: table */}
+      <div className="hidden sm:block overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="text-left text-gray-500 border-b">
+            <tr><th className="py-2">Nombre</th><th>Tipo</th><th>Emisión</th><th>Vence</th><th>Criticidad</th><th>Estado</th></tr>
+          </thead>
+          <tbody>
+            {docs.map(d => (
+              <tr key={d.id} className="border-b">
+                <td className="py-2">{d.document_name}</td>
+                <td className="py-2 text-gray-600">{d.document_type}</td>
+                <td className="py-2 whitespace-nowrap">{d.issued_at}</td>
+                <td className="py-2 whitespace-nowrap">{d.expires_at}</td>
+                <td className="py-2">{d.criticality === 'critical' ? 'Crítico' : 'Normal'}</td>
+                <td className="py-2"><StatusBadge status={d.status} /></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
   );
 }
 ```
@@ -1017,20 +1085,20 @@ export default async function DashboardPage() {
     .slice(0, 10);
 
   return (
-    <main className="p-8 max-w-6xl mx-auto space-y-8">
-      <header className="flex justify-between items-center">
+    <main className="p-4 sm:p-8 max-w-6xl mx-auto space-y-6 sm:space-y-8">
+      <header className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
         <div>
-          <h1 className="text-3xl font-bold">VendorPass</h1>
-          <p className="text-gray-600">Vigencia operativa verificable</p>
+          <h1 className="text-2xl sm:text-3xl font-bold">VendorPass</h1>
+          <p className="text-gray-600 text-sm">Vigencia operativa verificable</p>
         </div>
-        <nav className="flex gap-4 text-sm">
-          <Link href="/vendors" className="underline">Proveedores</Link>
-          <Link href="/expirations" className="underline">Vencimientos</Link>
-          <Link href="/vendors/new" className="bg-black text-white px-3 py-1.5 rounded">+ Proveedor</Link>
+        <nav className="flex gap-2 sm:gap-4 text-sm items-center">
+          <Link href="/vendors" className="underline py-2">Proveedores</Link>
+          <Link href="/expirations" className="underline py-2">Vencimientos</Link>
+          <Link href="/vendors/new" className="bg-black text-white px-3 py-2 rounded ml-auto sm:ml-0">+ Proveedor</Link>
         </nav>
       </header>
 
-      <section className="grid grid-cols-4 gap-4">
+      <section className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         <KpiCard label="Proveedores" value={vs.length} />
         <KpiCard label="OK" value={statuses.ok} tone="good" />
         <KpiCard label="Atención" value={statuses.atencion} tone="warn" />
@@ -1038,26 +1106,45 @@ export default async function DashboardPage() {
       </section>
 
       <section>
-        <h2 className="text-xl font-semibold mb-3">Próximos vencimientos</h2>
+        <h2 className="text-lg sm:text-xl font-semibold mb-3">Próximos vencimientos</h2>
         {upcoming.length === 0 ? (
           <p className="text-gray-500">Todo vigente.</p>
         ) : (
-          <table className="w-full text-sm">
-            <thead className="text-left text-gray-500 border-b">
-              <tr><th className="py-2">Documento</th><th>Vence</th><th>Criticidad</th><th>Estado</th><th></th></tr>
-            </thead>
-            <tbody>
+          <>
+            {/* Mobile cards */}
+            <ul className="sm:hidden space-y-2">
               {upcoming.map(d => (
-                <tr key={d.id} className="border-b">
-                  <td className="py-2">{d.document_name}</td>
-                  <td>{d.expires_at}</td>
-                  <td>{d.criticality === 'critical' ? 'Crítico' : 'Normal'}</td>
-                  <td><StatusBadge status={d.status} /></td>
-                  <td><Link className="underline" href={`/vendors/${d.vendor_id}`}>ver</Link></td>
-                </tr>
+                <li key={d.id} className="border rounded-lg p-3 bg-white">
+                  <div className="flex justify-between items-start gap-2">
+                    <div className="min-w-0">
+                      <Link href={`/vendors/${d.vendor_id}`} className="font-medium truncate block">{d.document_name}</Link>
+                      <div className="text-xs text-gray-500">Vence {d.expires_at} · {d.criticality === 'critical' ? 'Crítico' : 'Normal'}</div>
+                    </div>
+                    <StatusBadge status={d.status} />
+                  </div>
+                </li>
               ))}
-            </tbody>
-          </table>
+            </ul>
+            {/* Tablet/desktop table */}
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="text-left text-gray-500 border-b">
+                  <tr><th className="py-2">Documento</th><th>Vence</th><th>Criticidad</th><th>Estado</th><th></th></tr>
+                </thead>
+                <tbody>
+                  {upcoming.map(d => (
+                    <tr key={d.id} className="border-b">
+                      <td className="py-2">{d.document_name}</td>
+                      <td className="whitespace-nowrap">{d.expires_at}</td>
+                      <td>{d.criticality === 'critical' ? 'Crítico' : 'Normal'}</td>
+                      <td><StatusBadge status={d.status} /></td>
+                      <td><Link className="underline" href={`/vendors/${d.vendor_id}`}>ver</Link></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </section>
     </main>
@@ -1111,12 +1198,12 @@ export default async function VendorsPage() {
   });
 
   return (
-    <main className="p-8 max-w-6xl mx-auto space-y-6">
+    <main className="p-4 sm:p-8 max-w-6xl mx-auto space-y-4 sm:space-y-6">
       <header className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Proveedores</h1>
-        <Link href="/vendors/new" className="bg-black text-white px-3 py-1.5 rounded text-sm">+ Nuevo</Link>
+        <h1 className="text-xl sm:text-2xl font-bold">Proveedores</h1>
+        <Link href="/vendors/new" className="bg-black text-white px-3 py-2 rounded text-sm">+ Nuevo</Link>
       </header>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
         {withStatus.map(v => <VendorCard key={v.id} vendor={v} />)}
       </div>
     </main>
@@ -1146,7 +1233,7 @@ import { notFound } from 'next/navigation';
 import { supabaseServer } from '@/lib/supabase/server';
 import { documentStatus, vendorStatus } from '@/lib/status';
 import { StatusBadge } from '@/components/StatusBadge';
-import { DocumentRow } from '@/components/DocumentRow';
+import { DocumentList } from '@/components/DocumentRow';
 import type { Vendor, VendorDocument } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
@@ -1161,30 +1248,24 @@ export default async function VendorDetailPage({ params }: { params: { id: strin
   const status = vendorStatus(ds);
 
   return (
-    <main className="p-8 max-w-5xl mx-auto space-y-6">
+    <main className="p-4 sm:p-8 max-w-5xl mx-auto space-y-4 sm:space-y-6">
       <Link href="/vendors" className="text-sm underline">← Proveedores</Link>
-      <header className="flex justify-between items-start">
-        <div>
-          <h1 className="text-2xl font-bold">{v.name}</h1>
-          <p className="text-gray-600 text-sm">{v.category ?? '—'} · {v.owner_name ?? '—'} ({v.owner_email ?? '—'})</p>
+      <header className="flex justify-between items-start gap-3">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-bold truncate">{v.name}</h1>
+          <p className="text-gray-600 text-sm">{v.category ?? '—'} · {v.owner_name ?? '—'}</p>
+          {v.owner_email && <p className="text-gray-500 text-xs truncate">{v.owner_email}</p>}
           {v.notes && <p className="text-sm mt-2">{v.notes}</p>}
         </div>
         <StatusBadge status={status} />
       </header>
 
       <section>
-        <div className="flex justify-between items-center mb-3">
-          <h2 className="text-lg font-semibold">Documentos</h2>
-          <Link href={`/vendors/${v.id}/documents/new`} className="bg-black text-white px-3 py-1.5 rounded text-sm">+ Documento</Link>
+        <div className="flex justify-between items-center mb-3 gap-2">
+          <h2 className="text-base sm:text-lg font-semibold">Documentos</h2>
+          <Link href={`/vendors/${v.id}/documents/new`} className="bg-black text-white px-3 py-2 rounded text-sm whitespace-nowrap">+ Documento</Link>
         </div>
-        <table className="w-full text-sm">
-          <thead className="text-left text-gray-500 border-b">
-            <tr><th className="py-2">Nombre</th><th>Tipo</th><th>Emisión</th><th>Vence</th><th>Criticidad</th><th>Estado</th></tr>
-          </thead>
-          <tbody>
-            {ds.map(d => <DocumentRow key={d.id} doc={{ ...d, status: documentStatus(d) }} />)}
-          </tbody>
-        </table>
+        <DocumentList docs={ds.map(d => ({ ...d, status: documentStatus(d) }))} />
       </section>
     </main>
   );
@@ -1233,26 +1314,35 @@ export default function NewVendorPage() {
   }
 
   return (
-    <main className="p-8 max-w-xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">Nuevo proveedor</h1>
+    <main className="p-4 sm:p-8 max-w-xl mx-auto">
+      <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Nuevo proveedor</h1>
       <form onSubmit={submit} className="space-y-3">
         {[
-          ['name', 'Nombre *', true],
-          ['category', 'Categoría', false],
-          ['owner_name', 'Owner interno', false],
-          ['owner_email', 'Email del owner', false],
-          ['area', 'Área / sitio', false],
-        ].map(([k, label, req]) => (
+          ['name', 'Nombre *', true, 'text'],
+          ['category', 'Categoría', false, 'text'],
+          ['owner_name', 'Owner interno', false, 'text'],
+          ['owner_email', 'Email del owner', false, 'email'],
+          ['area', 'Área / sitio', false, 'text'],
+        ].map(([k, label, req, type]) => (
           <label key={k as string} className="block">
             <span className="text-sm text-gray-700">{label as string}</span>
-            <input required={req as boolean} value={(form as any)[k as string]} onChange={set(k as string)} className="mt-1 w-full border rounded px-2 py-1" />
+            <input
+              type={type as string}
+              inputMode={(type as string) === 'email' ? 'email' : undefined}
+              autoCapitalize={(type as string) === 'email' ? 'none' : undefined}
+              autoCorrect={(type as string) === 'email' ? 'off' : undefined}
+              required={req as boolean}
+              value={(form as any)[k as string]}
+              onChange={set(k as string)}
+              className="mt-1 w-full border rounded px-3 py-2 text-base"
+            />
           </label>
         ))}
         <label className="block">
           <span className="text-sm text-gray-700">Notas</span>
-          <textarea value={form.notes} onChange={set('notes')} className="mt-1 w-full border rounded px-2 py-1" rows={3} />
+          <textarea value={form.notes} onChange={set('notes')} className="mt-1 w-full border rounded px-3 py-2 text-base" rows={3} />
         </label>
-        <button disabled={saving} className="bg-black text-white px-4 py-2 rounded">{saving ? 'Guardando…' : 'Guardar'}</button>
+        <button disabled={saving} className="w-full sm:w-auto bg-black text-white px-4 py-3 rounded font-medium">{saving ? 'Guardando…' : 'Guardar'}</button>
       </form>
     </main>
   );
@@ -1308,43 +1398,43 @@ export default function NewDocumentPage() {
   }
 
   return (
-    <main className="p-8 max-w-xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">Nuevo documento</h1>
+    <main className="p-4 sm:p-8 max-w-xl mx-auto">
+      <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Nuevo documento</h1>
       <form onSubmit={submit} className="space-y-3">
         <label className="block">
           <span className="text-sm">Tipo *</span>
-          <input required value={form.document_type} onChange={set('document_type')} className="mt-1 w-full border rounded px-2 py-1" placeholder="poliza_art, habilitacion, etc." />
+          <input required value={form.document_type} onChange={set('document_type')} className="mt-1 w-full border rounded px-3 py-2 text-base" placeholder="poliza_art, habilitacion, etc." />
         </label>
         <label className="block">
           <span className="text-sm">Nombre *</span>
-          <input required value={form.document_name} onChange={set('document_name')} className="mt-1 w-full border rounded px-2 py-1" />
+          <input required value={form.document_name} onChange={set('document_name')} className="mt-1 w-full border rounded px-3 py-2 text-base" />
         </label>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <label className="block">
             <span className="text-sm">Emisión *</span>
-            <input type="date" required value={form.issued_at} onChange={set('issued_at')} className="mt-1 w-full border rounded px-2 py-1" />
+            <input type="date" required value={form.issued_at} onChange={set('issued_at')} className="mt-1 w-full border rounded px-3 py-2 text-base" />
           </label>
           <label className="block">
             <span className="text-sm">Vencimiento *</span>
-            <input type="date" required value={form.expires_at} onChange={set('expires_at')} className="mt-1 w-full border rounded px-2 py-1" />
+            <input type="date" required value={form.expires_at} onChange={set('expires_at')} className="mt-1 w-full border rounded px-3 py-2 text-base" />
           </label>
         </div>
         <label className="block">
           <span className="text-sm">Criticidad *</span>
-          <select value={form.criticality} onChange={set('criticality')} className="mt-1 w-full border rounded px-2 py-1">
+          <select value={form.criticality} onChange={set('criticality')} className="mt-1 w-full border rounded px-3 py-2 text-base">
             <option value="critical">Crítico</option>
             <option value="normal">Normal</option>
           </select>
         </label>
         <label className="block">
           <span className="text-sm">URL de evidencia</span>
-          <input value={form.file_url} onChange={set('file_url')} className="mt-1 w-full border rounded px-2 py-1" />
+          <input type="url" inputMode="url" value={form.file_url} onChange={set('file_url')} className="mt-1 w-full border rounded px-3 py-2 text-base" />
         </label>
         <label className="block">
           <span className="text-sm">Notas</span>
-          <textarea value={form.notes} onChange={set('notes')} className="mt-1 w-full border rounded px-2 py-1" rows={3} />
+          <textarea value={form.notes} onChange={set('notes')} className="mt-1 w-full border rounded px-3 py-2 text-base" rows={3} />
         </label>
-        <button disabled={saving} className="bg-black text-white px-4 py-2 rounded">{saving ? 'Guardando…' : 'Guardar'}</button>
+        <button disabled={saving} className="w-full sm:w-auto bg-black text-white px-4 py-3 rounded font-medium">{saving ? 'Guardando…' : 'Guardar'}</button>
       </form>
     </main>
   );
@@ -1383,12 +1473,12 @@ export default async function ExpirationsPage({ searchParams }: { searchParams: 
   ]);
 
   return (
-    <main className="p-8 max-w-5xl mx-auto space-y-8">
-      <header className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Vencimientos</h1>
+    <main className="p-4 sm:p-8 max-w-5xl mx-auto space-y-6 sm:space-y-8">
+      <header className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+        <h1 className="text-xl sm:text-2xl font-bold">Vencimientos</h1>
         <div className="text-sm flex gap-3">
-          <Link href="/expirations?window=7" className="underline">7 días</Link>
-          <Link href="/expirations?window=30" className="underline">30 días</Link>
+          <Link href="/expirations?window=7" className="underline py-2">7 días</Link>
+          <Link href="/expirations?window=30" className="underline py-2">30 días</Link>
         </div>
       </header>
 
@@ -1408,23 +1498,42 @@ export default async function ExpirationsPage({ searchParams }: { searchParams: 
 function Table({ rows }: { rows: { vendorId: string; documentId: string; documentName: string; documentType: string; expiresAt: string; status: 'vigente'|'por_vencer'|'vencido'; criticality: 'critical'|'normal' }[] }) {
   if (rows.length === 0) return <p className="text-gray-500 text-sm">Sin registros.</p>;
   return (
-    <table className="w-full text-sm">
-      <thead className="text-left text-gray-500 border-b">
-        <tr><th className="py-2">Documento</th><th>Tipo</th><th>Vence</th><th>Criticidad</th><th>Estado</th><th></th></tr>
-      </thead>
-      <tbody>
+    <>
+      {/* Mobile cards */}
+      <ul className="sm:hidden space-y-2">
         {rows.map(r => (
-          <tr key={r.documentId} className="border-b">
-            <td className="py-2">{r.documentName}</td>
-            <td>{r.documentType}</td>
-            <td>{r.expiresAt}</td>
-            <td>{r.criticality === 'critical' ? 'Crítico' : 'Normal'}</td>
-            <td><StatusBadge status={r.status} /></td>
-            <td><Link href={`/vendors/${r.vendorId}`} className="underline">ver</Link></td>
-          </tr>
+          <li key={r.documentId} className="border rounded-lg p-3 bg-white">
+            <div className="flex justify-between items-start gap-2">
+              <Link href={`/vendors/${r.vendorId}`} className="min-w-0">
+                <div className="font-medium truncate">{r.documentName}</div>
+                <div className="text-xs text-gray-500">{r.documentType} · vence {r.expiresAt}</div>
+              </Link>
+              <StatusBadge status={r.status} />
+            </div>
+          </li>
         ))}
-      </tbody>
-    </table>
+      </ul>
+      {/* Tablet/desktop */}
+      <div className="hidden sm:block overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="text-left text-gray-500 border-b">
+            <tr><th className="py-2">Documento</th><th>Tipo</th><th>Vence</th><th>Criticidad</th><th>Estado</th><th></th></tr>
+          </thead>
+          <tbody>
+            {rows.map(r => (
+              <tr key={r.documentId} className="border-b">
+                <td className="py-2">{r.documentName}</td>
+                <td>{r.documentType}</td>
+                <td className="whitespace-nowrap">{r.expiresAt}</td>
+                <td>{r.criticality === 'critical' ? 'Crítico' : 'Normal'}</td>
+                <td><StatusBadge status={r.status} /></td>
+                <td><Link href={`/vendors/${r.vendorId}`} className="underline">ver</Link></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
   );
 }
 ```
@@ -1498,7 +1607,43 @@ git add scripts package.json package-lock.json && git commit -m "feat: arkiv bac
 
 ---
 
-## Task 17: End-to-end demo run
+## Task 17: Mobile responsiveness verification
+
+**Files:** none (verification only)
+
+- [ ] **Step 1: Verify viewport + layout at 360×640 (small Android)**
+
+Open Chrome DevTools → device toolbar → set 360×640. Visit `/`, `/vendors`, `/vendors/<id>`, `/vendors/new`, `/vendors/<id>/documents/new`, `/expirations`.
+Expected:
+- No horizontal scroll on any page.
+- KPI grid is 2×2, not 1×4 squashed.
+- Tables in dashboard / vendor detail / expirations render as **stacked cards**, not tables.
+- Header nav wraps cleanly; "+ Proveedor" button is reachable with thumb.
+- All form inputs are full-width with ≥ 44px tap targets.
+
+- [ ] **Step 2: Verify at 390×844 (iPhone 13/14) and 768 (iPad)**
+
+Same checks. At 768 the layout should switch to tables and 2-col vendor grid.
+
+- [ ] **Step 3: Verify date inputs trigger native mobile pickers**
+
+In the document form on a real phone (or mobile emulation), tap "Emisión" / "Vencimiento" → native date wheel appears.
+
+- [ ] **Step 4: Lighthouse mobile audit**
+
+In Chrome DevTools → Lighthouse → Mobile → run on `/` and `/vendors/<id>`.
+Expected: no critical "Tap targets too small", "Content wider than screen", or "Viewport not set" warnings.
+
+- [ ] **Step 5: Commit any responsive fixes**
+
+If any issue was found and fixed:
+```bash
+git add -A && git commit -m "fix: mobile responsiveness corrections"
+```
+
+---
+
+## Task 18: End-to-end demo run
 
 - [ ] **Step 1: Bring up local stack**
 
