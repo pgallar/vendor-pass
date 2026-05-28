@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# arkiv sync state (local)
+.arkiv-last-sync.json
+
+# playwright MCP (local test artifacts)
+.playwright-mcp/
