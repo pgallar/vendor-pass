@@ -137,6 +137,8 @@ services:
       SMTP_FROM: noreply@vendorpass.local
       SMTP_FROM_NAME: VendorPass
       EMAIL_NOTIFICATIONS_ENABLED: 'true'
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      AI_EXTRACTION_MODEL: ${AI_EXTRACTION_MODEL:-google/gemini-2.0-flash-001}
     command: ['sh', '/app/docker/entrypoint-app.sh']
     depends_on:
       gateway:

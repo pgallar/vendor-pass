@@ -4,16 +4,11 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/vendor-pass/button';
 import { FormField, Input, Select, Textarea } from '@/components/vendor-pass/form-field';
-import { Calendar, FileText, Link as LinkIcon, Upload, Hash } from 'lucide-react';
+import { Calendar, FileText, Link as LinkIcon, Upload, Hash, Sparkles } from 'lucide-react';
+import { DOCUMENT_TYPES } from '@/lib/documents';
+import type { ExtractedDocument } from '@/lib/types';
 
-export const DOCUMENT_TYPES = [
-  { value: 'poliza_art', label: 'Póliza ART' },
-  { value: 'habilitacion', label: 'Habilitación' },
-  { value: 'constancia_fiscal', label: 'Constancia fiscal' },
-  { value: 'seguro_rc', label: 'Seguro RC' },
-  { value: 'certificado_iso', label: 'Certificado ISO' },
-  { value: 'otro', label: 'Otro' },
-];
+export { DOCUMENT_TYPES } from '@/lib/documents';
 
 export interface DocumentFormState {
   document_type: string;
@@ -34,6 +29,14 @@ export interface DocumentFormProps {
   onCancel: () => void;
 }
 
+function AiBadge() {
+  return (
+    <span className="inline-flex items-center gap-1 text-[10px] font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded">
+      <Sparkles size={10} aria-hidden="true" /> IA
+    </span>
+  );
+}
+
 export function DocumentForm({ vendorId, documentId, initial, submitLabel, onCancel }: DocumentFormProps) {
   const router = useRouter();
   const isEdit = Boolean(documentId);
@@ -43,6 +46,10 @@ export function DocumentForm({ vendorId, documentId, initial, submitLabel, onCan
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [errors, setErrors] = useState<Partial<Record<keyof DocumentFormState, string>>>({});
   const [form, setForm] = useState<DocumentFormState>(initial);
+  const [aiFields, setAiFields] = useState<Set<string>>(new Set());
+  const [aiConfidence, setAiConfidence] = useState<number | null>(null);
+  const [aiExtracting, setAiExtracting] = useState(false);
+  const [aiSummary, setAiSummary] = useState<string>('');
 
   function handleChange<K extends keyof DocumentFormState>(key: K, value: DocumentFormState[K]) {
     setForm(prev => ({ ...prev, [key]: value }));
@@ -58,23 +65,79 @@ export function DocumentForm({ vendorId, documentId, initial, submitLabel, onCan
     }));
   }
 
+  function applyExtraction(ex: ExtractedDocument) {
+    const filled = new Set<string>();
+    setForm(prev => {
+      const next = { ...prev };
+      const maybe = (key: keyof DocumentFormState, value: string) => {
+        if (value && !prev[key]) {
+          next[key] = value;
+          filled.add(key);
+        }
+      };
+      maybe('document_type', ex.document_type !== 'otro' ? ex.document_type : '');
+      maybe('document_name', ex.document_name);
+      maybe('issued_at', ex.issued_at);
+      maybe('expires_at', ex.expires_at);
+      if (ex.criticality && !filled.has('criticality')) {
+        next.criticality = ex.criticality;
+        filled.add('criticality');
+      }
+      // Volcar metadatos extra en notas si están vacías
+      if (!prev.notes) {
+        const meta = [
+          ex.issuer && `Emisor: ${ex.issuer}`,
+          ex.policy_number && `N°: ${ex.policy_number}`,
+          ex.coverage && `Cobertura: ${ex.coverage}`,
+        ].filter(Boolean);
+        if (meta.length) {
+          next.notes = meta.join(' · ');
+          filled.add('notes');
+        }
+      }
+      return next;
+    });
+    setAiFields(filled);
+    setAiConfidence(ex.confidence);
+    setAiSummary(ex.summary);
+  }
+
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploadError(null);
     setUploading(true);
-    const body = new FormData();
-    body.append('file', file);
-    body.append('vendorId', vendorId);
-    const res = await fetch('/api/upload', { method: 'POST', body });
+    setAiExtracting(true);
+
+    const uploadBody = new FormData();
+    uploadBody.append('file', file);
+    uploadBody.append('vendorId', vendorId);
+
+    const extractBody = new FormData();
+    extractBody.append('file', file);
+
+    const [uploadRes, extractRes] = await Promise.allSettled([
+      fetch('/api/upload', { method: 'POST', body: uploadBody }),
+      fetch('/api/documents/extract', { method: 'POST', body: extractBody }),
+    ]);
+
     setUploading(false);
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
+    setAiExtracting(false);
+
+    if (uploadRes.status === 'fulfilled' && uploadRes.value.ok) {
+      const { fileUrl, fileHash } = await uploadRes.value.json();
+      setForm(prev => ({ ...prev, file_url: fileUrl, file_hash: fileHash }));
+    } else {
+      const data =
+        uploadRes.status === 'fulfilled' ? await uploadRes.value.json().catch(() => ({})) : {};
       setUploadError(data.error ?? 'Error subiendo archivo');
-      return;
     }
-    const { fileUrl, fileHash } = await res.json();
-    setForm(prev => ({ ...prev, file_url: fileUrl, file_hash: fileHash }));
+
+    if (extractRes.status === 'fulfilled' && extractRes.value.ok) {
+      const { extracted } = await extractRes.value.json();
+      applyExtraction(extracted as ExtractedDocument);
+    }
+    // Si la extracción falla o no está configurada, se ignora en silencio: el form sigue manual.
   }
 
   function validate(): boolean {
@@ -111,12 +174,33 @@ export function DocumentForm({ vendorId, documentId, initial, submitLabel, onCan
 
   return (
     <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-6">
+      {aiExtracting && (
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20 text-sm text-primary">
+          <Sparkles size={15} className="animate-pulse" aria-hidden="true" />
+          Analizando documento con IA…
+        </div>
+      )}
+      {!aiExtracting && aiConfidence !== null && (
+        <div className="flex flex-col gap-1 p-3 rounded-lg bg-primary/5 border border-primary/20 text-sm">
+          <span className="inline-flex items-center gap-2 font-medium text-primary">
+            <Sparkles size={15} aria-hidden="true" />
+            Campos precargados por IA · confianza {Math.round(aiConfidence * 100)}%
+          </span>
+          {aiSummary && <span className="text-xs text-muted-foreground">{aiSummary}</span>}
+          <span className="text-xs text-muted-foreground">Revisá y corregí antes de guardar.</span>
+        </div>
+      )}
       <section aria-labelledby="doc-heading" className="bg-card border border-border rounded-xl p-4 flex flex-col gap-4">
         <h2 id="doc-heading" className="text-sm font-semibold text-foreground">
           Datos del documento
         </h2>
 
-        <FormField id="document_type" label="Tipo de documento" required error={errors.document_type}>
+        <FormField
+          id="document_type"
+          label={<>Tipo de documento {aiFields.has('document_type') && <AiBadge />}</>}
+          required
+          error={errors.document_type}
+        >
           <Select
             id="document_type"
             value={form.document_type}
@@ -128,7 +212,12 @@ export function DocumentForm({ vendorId, documentId, initial, submitLabel, onCan
           />
         </FormField>
 
-        <FormField id="document_name" label="Nombre del documento" required error={errors.document_name}>
+        <FormField
+          id="document_name"
+          label={<>Nombre del documento {aiFields.has('document_name') && <AiBadge />}</>}
+          required
+          error={errors.document_name}
+        >
           <Input
             id="document_name"
             placeholder="Ej: Póliza ART 2025"
@@ -141,7 +230,12 @@ export function DocumentForm({ vendorId, documentId, initial, submitLabel, onCan
         </FormField>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <FormField id="issued_at" label="Fecha de emisión" required error={errors.issued_at}>
+          <FormField
+            id="issued_at"
+            label={<>Fecha de emisión {aiFields.has('issued_at') && <AiBadge />}</>}
+            required
+            error={errors.issued_at}
+          >
             <Input
               id="issued_at"
               type="date"
@@ -153,7 +247,12 @@ export function DocumentForm({ vendorId, documentId, initial, submitLabel, onCan
             />
           </FormField>
 
-          <FormField id="expires_at" label="Fecha de vencimiento" required error={errors.expires_at}>
+          <FormField
+            id="expires_at"
+            label={<>Fecha de vencimiento {aiFields.has('expires_at') && <AiBadge />}</>}
+            required
+            error={errors.expires_at}
+          >
             <Input
               id="expires_at"
               type="date"
@@ -166,7 +265,11 @@ export function DocumentForm({ vendorId, documentId, initial, submitLabel, onCan
           </FormField>
         </div>
 
-        <FormField id="criticality" label="Criticidad" required>
+        <FormField
+          id="criticality"
+          label={<>Criticidad {aiFields.has('criticality') && <AiBadge />}</>}
+          required
+        >
           <Select
             id="criticality"
             value={form.criticality}
@@ -241,7 +344,10 @@ export function DocumentForm({ vendorId, documentId, initial, submitLabel, onCan
           </FormField>
         )}
 
-        <FormField id="notes" label="Notas">
+        <FormField
+          id="notes"
+          label={<>Notas {aiFields.has('notes') && <AiBadge />}</>}
+        >
           <Textarea
             id="notes"
             placeholder="Observaciones sobre el documento…"

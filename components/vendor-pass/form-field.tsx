@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils'
 
 export interface FormFieldProps {
   id: string
-  label: string
+  label: React.ReactNode
   /** Makes the label show a required asterisk */
   required?: boolean
   hint?: string

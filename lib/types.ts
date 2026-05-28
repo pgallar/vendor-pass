@@ -34,3 +34,32 @@ export interface VendorWithStatus extends Vendor {
   status: VendorStatus;
   documents: (VendorDocument & { status: DocumentStatus })[];
 }
+
+/** Salida cruda del modelo (forced tool use) — todos los campos opcionales. */
+export interface RawExtraction {
+  document_type?: string;
+  document_name?: string;
+  issued_at?: string;
+  expires_at?: string;
+  criticality?: string;
+  issuer?: string;
+  policy_number?: string;
+  coverage?: string;
+  summary?: string;
+  confidence?: number;
+}
+
+/** Resultado normalizado y validado, listo para precargar el formulario. */
+export interface ExtractedDocument {
+  document_type: string;          // valor de enum DOCUMENT_TYPES, o '' si no se reconoce
+  document_name: string;
+  issued_at: string;              // 'YYYY-MM-DD' o ''
+  expires_at: string;             // 'YYYY-MM-DD' o ''
+  criticality: Criticality;
+  issuer: string;
+  policy_number: string;
+  coverage: string;
+  summary: string;
+  confidence: number;             // 0..1
+  fields_found: string[];         // claves con valor — para los sellos "✨ IA"
+}
