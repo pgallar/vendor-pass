@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils';
 import { StatusBadge } from './status-badge';
+import { DocumentRowActions } from './document-row-actions';
 import type { VendorDocument, DocumentStatus } from '@/lib/types';
 import { FileText, Calendar, Plus, ShieldCheck } from 'lucide-react';
 import { Button } from './button';
@@ -25,7 +26,7 @@ function getDaysLabel(expiresAt: string, status: DocumentStatus): string | null 
   return null;
 }
 
-function DocumentRow({ doc }: { doc: Doc }) {
+function DocumentRow({ doc, vendorId }: { doc: Doc; vendorId?: string }) {
   const daysLabel = getDaysLabel(doc.expires_at, doc.status);
 
   return (
@@ -53,7 +54,7 @@ function DocumentRow({ doc }: { doc: Doc }) {
           )}
         </div>
       </div>
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex items-center gap-1 shrink-0">
         <Link
           href={`/verify/${doc.id}`}
           className="inline-flex items-center gap-1 text-xs text-primary font-medium min-h-11 px-2"
@@ -62,6 +63,7 @@ function DocumentRow({ doc }: { doc: Doc }) {
           <ShieldCheck size={14} aria-hidden="true" />
           <span className="hidden sm:inline">Verificar</span>
         </Link>
+        {vendorId && <DocumentRowActions documentId={doc.id} vendorId={vendorId} />}
         <StatusBadge status={doc.status} size="sm" />
       </div>
     </li>
@@ -82,7 +84,7 @@ export function DocumentList({ documents, vendorId, className, showAddCta = fals
 
   return (
     <div className={cn('flex flex-col', className)}>
-      <ul role="list">{documents.map(d => <DocumentRow key={d.id} doc={d} />)}</ul>
+      <ul role="list">{documents.map(d => <DocumentRow key={d.id} doc={d} vendorId={vendorId} />)}</ul>
       {showAddCta && vendorId && (
         <div className="pt-3">
           <Button variant="outline" size="sm" className="w-full" asChild>
