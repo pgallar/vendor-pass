@@ -3,6 +3,7 @@ import { readSyncState } from '@/lib/arkiv/sync-state';
 import { getStoreSource } from '@/lib/arkiv/validations';
 import { cn } from '@/lib/utils';
 import { Database, Clock } from 'lucide-react';
+import { ArkivSyncActions } from './arkiv-sync-actions';
 
 export function ArkivSyncBanner() {
   const state = readSyncState();
@@ -29,13 +30,16 @@ export function ArkivSyncBanner() {
           <Clock size={11} aria-hidden="true" />
           {state?.completedAt
             ? `Última sync: ${new Date(state.completedAt).toLocaleString('es-MX')}`
-            : 'Sin sync registrada — ejecuta npm run sync:arkiv'}
+            : 'Sin sync registrada — usa Sync now'}
           {stale && ' · los estados pueden estar desactualizados'}
         </p>
       </div>
-      <Link href="/expirations" className="text-xs text-primary font-medium shrink-0">
-        Vencimientos
-      </Link>
+      <div className="flex flex-col items-end gap-2 shrink-0">
+        <ArkivSyncActions />
+        <Link href="/expirations" className="text-xs text-primary font-medium">
+          Vencimientos
+        </Link>
+      </div>
     </div>
   );
 }

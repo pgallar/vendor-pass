@@ -1,3 +1,4 @@
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { supabaseAdmin } from '@/lib/supabase/server';
 import { getStore } from '@/lib/arkiv/validations';
 import { documentToValidationEntity } from '@/lib/arkiv/entity';
@@ -11,15 +12,24 @@ export type SyncDocumentsResult = {
   errors: Array<{ documentId: string; message: string }>;
 };
 
+type SyncOptions = {
+  /** Cliente con sesión del usuario (RLS). Sin esto, sync global vía service_role (cron/scripts). */
+  supabase?: SupabaseClient;
+  /** Persistir estado global de sync (solo cron/admin). */
+  writeSyncState?: boolean;
+};
+
 /** Recalcula status desde Postgres y upsert en Arkiv (create o update). */
-export async function syncDocumentsToArkiv(): Promise<SyncDocumentsResult> {
-  const sb = supabaseAdmin();
+export async function syncDocumentsToArkiv(options: SyncOptions = {}): Promise<SyncDocumentsResult> {
+  const sb = options.supabase ?? supabaseAdmin();
+  const persistState = options.writeSyncState ?? options.supabase == null;
+
   const { data: docs, error } = await sb.from('documents').select('*');
   if (error) throw error;
 
-  const store = getStore();
   const { data: vendors } = await sb.from('vendors').select('id,name,owner_email,owner_name');
   const vendorById = new Map((vendors ?? []).map(v => [v.id, v]));
+  const store = getStore();
   const syncedAt = new Date().toISOString();
 
   const result: SyncDocumentsResult = {
@@ -42,7 +52,7 @@ export async function syncDocumentsToArkiv(): Promise<SyncDocumentsResult> {
     }
   }
 
-  if (result.failed === 0) {
+  if (persistState && result.failed === 0) {
     writeSyncState({
       completedAt: syncedAt,
       synced: result.synced,
