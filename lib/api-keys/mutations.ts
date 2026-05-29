@@ -2,6 +2,7 @@ import { createHash, randomUUID } from 'crypto';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { documentToValidationEntity } from '@/lib/arkiv/entity';
 import { getStore } from '@/lib/arkiv/validations';
+import { immutableFieldsChanged } from '@/lib/documents/lifecycle';
 import { DOCUMENT_TYPE_VALUES } from '@/lib/documents';
 import { isAiConfigured } from '@/lib/ai/client';
 import { buildDocumentInputFromExtraction } from '@/lib/api-keys/document-from-extraction';
@@ -44,6 +45,7 @@ async function vendorInfo(supabase: SupabaseClient, vendorId: string) {
 }
 
 async function syncDocumentArkiv(supabase: SupabaseClient, doc: VendorDocument) {
+  if (doc.lifecycle_status !== 'anchored') return;
   const vendor = await vendorInfo(supabase, doc.vendor_id);
   await getStore().upsert(documentToValidationEntity(doc, vendor));
 }
@@ -190,6 +192,20 @@ export async function updateDocument(
 
   if (input.vendor_id && input.vendor_id !== existing.vendor_id) {
     throw new Error('No se puede cambiar el proveedor de un documento');
+  }
+
+  if (existing.lifecycle_status === 'anchored') {
+    const changed = immutableFieldsChanged(existing, {
+      document_type: input.document_type,
+      issued_at: input.issued_at,
+      expires_at: input.expires_at,
+      file_hash: input.file_hash,
+    });
+    if (changed.length > 0) {
+      throw new Error(
+        `El documento está anclado en Arkiv: no se pueden modificar ${changed.join(', ')}.`,
+      );
+    }
   }
 
   const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };

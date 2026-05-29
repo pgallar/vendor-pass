@@ -15,6 +15,9 @@ const baseDoc = (overrides: Partial<VendorDocument>): VendorDocument => ({
   notes: null,
   created_at: '',
   updated_at: '',
+  lifecycle_status: 'anchored',
+  anchored_at: null,
+  arkiv_entity_key: null,
   ...overrides,
 });
 

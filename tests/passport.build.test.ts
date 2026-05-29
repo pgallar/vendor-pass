@@ -23,8 +23,14 @@ function doc(over: Partial<VendorDocument>): VendorDocument {
     criticality: 'critical',
     file_url: 'https://s3.amazonaws.com/bucket/muy/larga/firma?X-Amz-Signature=abc',
     file_hash: 'a'.repeat(64),
+    notes: null,
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '2026-01-01T00:00:00Z',
+    lifecycle_status: 'anchored',
+    anchored_at: '2026-01-01T00:00:00Z',
+    arkiv_entity_key: null,
     ...over,
-  } as VendorDocument;
+  };
 }
 
 function entity(over: Partial<ValidationEntity>): ValidationEntity {

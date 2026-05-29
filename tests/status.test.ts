@@ -6,7 +6,9 @@ const baseDoc = (overrides: Partial<VendorDocument>): VendorDocument => ({
   id: 'd', vendor_id: 'v', document_type: 'poliza', document_name: 'X',
   issued_at: '2025-01-01', expires_at: '2026-01-01',
   criticality: 'critical', file_url: null, file_hash: null, notes: null,
-  created_at: '', updated_at: '', ...overrides,
+  created_at: '', updated_at: '',
+  lifecycle_status: 'anchored', anchored_at: null, arkiv_entity_key: null,
+  ...overrides,
 });
 
 describe('documentStatus', () => {
