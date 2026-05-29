@@ -55,10 +55,16 @@ export default async function DashboardPage({
   const statuses: Record<VendorStatus, number> = { ok: 0, atencion: 0, bloqueado: 0 };
   withStatus.forEach(v => { statuses[v.status]++; });
 
-  const docsVencidos = expired.length;
-  const docsPorVencer = soon.length;
   const vendorById = new Map(vs.map(v => [v.id, v]));
-  const upcoming = soon.slice(0, 10);
+
+  // Filtramos la data de Arkiv (global/pública) para mostrar solo documentos de los proveedores del usuario
+  const myExpired = expired.filter(doc => vendorById.has(doc.vendorId));
+  const mySoon = soon.filter(doc => vendorById.has(doc.vendorId));
+
+  const docsVencidos = myExpired.length;
+  const docsPorVencer = mySoon.length;
+  const upcoming = mySoon.slice(0, 10);
+  
   const alertVendors = withStatus.filter(v => v.status === 'bloqueado' || v.status === 'atencion');
 
   return (
