@@ -7,6 +7,7 @@ import { getStoreSource } from '@/lib/arkiv/validations';
 import { PublicShell } from '@/components/vendor-pass/public-shell';
 import { StatusBadge } from '@/components/vendor-pass/status-badge';
 import { CopyVerifyLink } from '@/components/vendor-pass/copy-verify-link';
+import { HashVerifyPanel } from '@/components/vendor-pass/hash-verify-panel';
 import { ShieldCheck, Calendar, Hash, Key, AlertCircle } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
@@ -141,6 +142,8 @@ export default async function VerifyPage({ params }: { params: Promise<{ documen
               </p>
             </div>
           )}
+
+          <HashVerifyPanel expectedHash={entity.fileHash} />
 
           {evidenceUrl && (
             <Link
