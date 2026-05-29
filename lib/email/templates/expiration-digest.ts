@@ -1,3 +1,8 @@
+import {
+  buildPlainText,
+  renderAlertTable,
+  wrapEmailLayout,
+} from '@/lib/email/templates/layout';
 import type { Criticality, DocumentStatus } from '@/lib/types';
 
 export type ExpirationAlertItem = {
@@ -49,34 +54,25 @@ export function renderExpirationDigest(input: {
   const lines = sorted.map(formatAlertLine);
   const expirationsUrl = `${appUrl()}/expirations`;
 
-  const text = [
+  const text = buildPlainText({
     greeting,
-    '',
-    `Tienes ${count} documento(s) de proveedores que requieren atención:`,
-    '',
-    ...lines,
-    '',
-    `Ver detalle: ${expirationsUrl}`,
-    '',
-    '— VendorPass',
-  ].join('\n');
+    paragraphs: [
+      `Tienes ${count} documento(s) de proveedores que requieren atención:`,
+      '',
+      ...lines,
+    ],
+    cta: { label: 'Ver detalle', url: expirationsUrl },
+  });
 
-  const listItems = sorted
-    .map(
-      item => `<li><strong>${item.vendorName}</strong>: ${item.documentName} (${item.documentType}) — vence ${item.expiresAt} — ${STATUS_LABEL[item.status]} — ${item.criticality === 'critical' ? 'Crítico' : 'Normal'}</li>`,
-    )
-    .join('\n');
+  const bodyHtml = `<p style="margin:0 0 8px">${greeting}</p>
+<p style="margin:0">Tienes <strong>${count}</strong> documento(s) de proveedores que requieren atención:</p>
+${renderAlertTable(sorted)}`;
 
-  const html = `<!DOCTYPE html>
-<html lang="es">
-<body style="font-family:sans-serif;line-height:1.5;color:#111">
-  <p>${greeting}</p>
-  <p>Tienes <strong>${count}</strong> documento(s) de proveedores que requieren atención:</p>
-  <ul>${listItems}</ul>
-  <p><a href="${expirationsUrl}">Ver vencimientos en VendorPass</a></p>
-  <p style="color:#666;font-size:12px">— VendorPass</p>
-</body>
-</html>`;
+  const html = wrapEmailLayout({
+    preheader: `${count} documento(s) requieren atención en VendorPass`,
+    bodyHtml,
+    cta: { label: 'Ver vencimientos en VendorPass', url: expirationsUrl },
+  });
 
   return { subject, text, html };
 }

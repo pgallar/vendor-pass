@@ -51,4 +51,28 @@ describe('renderExpirationDigest', () => {
 
     expect(subject).toBe('VendorPass: 2 documento(s) requieren atención');
   });
+
+  it('renders branded HTML structure with alert table and CTA', () => {
+    const { html } = renderExpirationDigest({
+      recipientName: 'Ana',
+      alerts: [
+        {
+          vendorName: 'Proveedor X',
+          documentName: 'Seguro',
+          documentType: 'poliza',
+          expiresAt: '2026-07-01',
+          status: 'vencido',
+          criticality: 'critical',
+        },
+      ],
+    });
+
+    expect(html).toContain('lang="es"');
+    expect(html).toContain('VendorPass');
+    expect(html).toContain('Proveedor</th>');
+    expect(html).toContain('Ver vencimientos en VendorPass');
+    expect(html).toContain('Vencido');
+    expect(html).toContain('Crítico');
+    expect(html).toContain('#4f46e5');
+  });
 });
