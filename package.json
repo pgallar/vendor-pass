@@ -14,11 +14,14 @@
     "send:emails": "tsx scripts/send-expiration-emails.ts",
     "verify:arkiv": "tsx scripts/verify-arkiv.ts",
     "db:migrate:docker": "bash scripts/docker-apply-migrations.sh",
-    "smoke:profile": "tsx scripts/smoke-profile-api.ts"
+    "smoke:profile": "tsx scripts/smoke-profile-api.ts",
+    "smoke:mcp": "tsx scripts/smoke-mcp-isolation.ts",
+    "smoke:mcp:ai": "tsx scripts/smoke-mcp-ai-extract.ts"
   },
   "dependencies": {
     "@arkiv-network/sdk": "^0.6.8",
     "@aws-sdk/client-s3": "^3.1056.0",
+    "@modelcontextprotocol/sdk": "^1.26.0",
     "@radix-ui/react-slot": "^1.2.4",
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.106.2",
@@ -31,7 +34,8 @@
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "tailwind-merge": "^3.6.0",
-    "ws": "^8.21.0"
+    "ws": "^8.21.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
