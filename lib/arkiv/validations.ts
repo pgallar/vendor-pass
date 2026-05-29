@@ -1,7 +1,7 @@
 import type { Criticality, DocumentStatus } from '@/lib/types';
 import { arkivPublicClient, arkivWalletClient, ENTITY_TYPE, jsonToPayload } from './client';
 import { isExpiringWithinDays } from './dates';
-import { asc, eq } from '@arkiv-network/sdk/query';
+import { eq } from '@arkiv-network/sdk/query';
 import type { Hex } from 'viem';
 
 export const PROJECT_SLUG = process.env.PROJECT_SLUG || 'vendor-pass-2026';
@@ -132,6 +132,8 @@ export function createArkivStore(): ValidationStore {
     if (cached) return cached;
     const result = await pub.buildQuery()
       .where([eq('entityType', ENTITY_TYPE), eq('documentId', documentId)])
+      .withPayload(true)
+      .withAttributes(true)
       .fetch();
     const key = result.entities[0]?.key;
     if (key) entityKeyByDocumentId.set(documentId, key);
@@ -143,13 +145,37 @@ export function createArkivStore(): ValidationStore {
     return all.filter(e => e.status === status);
   }
 
+  let queryAllPromise: Promise<ValidationEntity[]> | null = null;
+  let queryAllTimestamp = 0;
+
   async function queryAll(): Promise<ValidationEntity[]> {
-    const result = await pub.buildQuery()
-      .where([eq('project', PROJECT_SLUG), eq('entityType', ENTITY_TYPE)])
-      .withPayload(true)
-      .orderBy(asc('expiresAtMs', 'number'))
-      .fetch();
-    return result.entities.map(parseEntity);
+    const now = Date.now();
+    if (queryAllPromise && now - queryAllTimestamp < 10000) {
+      return queryAllPromise;
+    }
+
+    queryAllPromise = (async () => {
+      try {
+        const result = await pub.buildQuery()
+          .where([eq('entityType', ENTITY_TYPE)])
+          .withPayload(true)
+          .withAttributes(true)
+          .fetch();
+          
+        const entities = result.entities.map(parseEntity);
+        return entities.sort((a, b) => {
+          const aMs = a.expiresAt ? new Date(a.expiresAt + 'T23:59:59Z').getTime() : 0;
+          const bMs = b.expiresAt ? new Date(b.expiresAt + 'T23:59:59Z').getTime() : 0;
+          return aMs - bMs;
+        });
+      } catch (err) {
+        queryAllPromise = null; // Important: Clear cache on error
+        throw err;
+      }
+    })();
+    
+    queryAllTimestamp = now;
+    return queryAllPromise;
   }
 
   return {
@@ -194,6 +220,7 @@ export function createArkivStore(): ValidationStore {
       const result = await pub.buildQuery()
         .where([eq('entityType', ENTITY_TYPE), eq('documentId', documentId)])
         .withPayload(true)
+        .withAttributes(true)
         .fetch();
       const row = result.entities[0];
       if (!row) return null;
@@ -204,16 +231,20 @@ export function createArkivStore(): ValidationStore {
       return queryAll();
     },
     async listByVendor(vendorId) {
-      const all = await queryAll();
-      return all.filter(e => e.vendorId === vendorId);
+      const result = await pub.buildQuery()
+        .where([eq('entityType', ENTITY_TYPE), eq('vendorId', vendorId)])
+        .withPayload(true)
+        .withAttributes(true)
+        .fetch();
+      return result.entities.map(parseEntity);
     },
     async listExpired() {
       return queryByStatus('vencido');
     },
     async listExpiringSoon(days) {
-      const porVencer = await queryByStatus('por_vencer');
-      const vigente = await queryByStatus('vigente');
-      return filterExpiringSoon([...porVencer, ...vigente], days);
+      const all = await queryAll();
+      const filterCandidates = all.filter(e => e.status === 'por_vencer' || e.status === 'vigente');
+      return filterExpiringSoon(filterCandidates, days);
     },
   };
 }

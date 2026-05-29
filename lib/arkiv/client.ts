@@ -14,7 +14,10 @@ let walletClient: WalletArkivClient | null = null;
 
 function transport() {
   const url = process.env.ARKIV_RPC_URL;
-  return http(url || braga.rpcUrls.default.http[0]);
+  return http(url || braga.rpcUrls.default.http[0], {
+    timeout: 60_000,
+    fetchOptions: { cache: 'no-store' },
+  });
 }
 
 export function arkivPublicClient(): PublicArkivClient {
@@ -38,4 +41,4 @@ export function arkivWalletClient(): WalletArkivClient {
 
 export { jsonToPayload };
 
-export const ENTITY_TYPE = 'vendor_document_validation';
+export const ENTITY_TYPE = 'vendor_document_validation_pass_2026';

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
-import { CheckCircle2, XCircle, RefreshCw } from 'lucide-react';
+import { CheckCircle2, XCircle, RefreshCw, Download } from 'lucide-react';
 import { Button } from './button';
 import type { ParityAuditResult } from '@/lib/arkiv/verify-parity';
 
@@ -79,10 +79,18 @@ export function ArkivAuditPanel() {
             Postgres: {result.postgresCount} · Arkiv: {result.arkivCount}
           </p>
         </div>
-        <Button type="button" variant="outline" size="sm" onClick={load} className="ml-auto min-h-11">
-          <RefreshCw size={14} aria-hidden="true" />
-          Actualizar
-        </Button>
+        <div className="ml-auto flex flex-col sm:flex-row gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={load} className="min-h-11">
+            <RefreshCw size={14} aria-hidden="true" />
+            Actualizar
+          </Button>
+          <Button asChild variant="primary" size="sm" className="min-h-11">
+            <a href="/api/arkiv/audit/pdf" target="_blank" rel="noopener noreferrer">
+              <Download size={14} aria-hidden="true" />
+              Descargar PDF
+            </a>
+          </Button>
+        </div>
       </div>
 
       {result.missingInArkiv.length > 0 && (

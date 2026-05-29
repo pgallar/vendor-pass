@@ -30,12 +30,12 @@ export async function listVendors(supabase: SupabaseClient, userId: string) {
   return list.map((v: Record<string, unknown>) => {
     const vdocs = docs.filter(d => d.vendor_id === v.id);
     return {
-      id: v.id,
-      name: v.name,
-      category: v.category,
-      area: v.area,
-      owner_name: v.owner_name,
-      owner_email: v.owner_email,
+      id: v.id as string,
+      name: v.name as string,
+      category: v.category as string,
+      area: v.area as string,
+      owner_name: v.owner_name as string,
+      owner_email: v.owner_email as string,
       status: vendorStatus(vdocs),
       documents_count: vdocs.length,
     };
@@ -140,8 +140,9 @@ export async function verifyDocumentInArkiv(supabase: SupabaseClient, userId: st
 
 /** Reporte de auditoría: combina el estado de cumplimiento con la paridad DB↔Arkiv. */
 export async function buildAuditReport(supabase: SupabaseClient, userId: string) {
-  const [vendors, expirations, parity] = await Promise.all([
+  const [vendors, documents, expirations, parity] = await Promise.all([
     listVendors(supabase, userId),
+    listDocuments(supabase, userId),
     listExpirations(supabase, userId),
     auditArkivParity({ userId }),
   ]);
@@ -158,8 +159,12 @@ export async function buildAuditReport(supabase: SupabaseClient, userId: string)
     generatedAt: new Date().toISOString(),
     source: getStoreSource(),
     summary,
+    vendorsList: vendors,
+    documentsList: documents,
     arkiv: parity,
-    conclusion: parity.ok
+    conclusion: parity.arkivAvailable === false
+      ? 'El servicio de auditoría descentralizada (Arkiv Network) no se encuentra disponible momentáneamente. Se presenta el reporte detallado con los datos operativos de la base de datos.'
+      : parity.ok
       ? 'La base de datos y Arkiv están en paridad: cada documento tiene su validación anclada con el estado correcto.'
       : 'Hay discrepancias entre la base de datos y Arkiv. Revisá los documentos faltantes, huérfanos o con estado distinto y ejecutá una sincronización.',
   };
