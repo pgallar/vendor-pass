@@ -33,6 +33,11 @@ if ! docker exec "$DB_CONTAINER" psql -U postgres -d postgres -tAc \
   apply "$ROOT/supabase/migrations/0006_api_keys.sql"
 else
   echo "⊙ 0006_api_keys.sql ya aplicada (tabla api_keys existe)"
+  docker exec "$DB_CONTAINER" psql -U postgres -d postgres -c \
+    "GRANT ALL ON TABLE public.api_keys TO anon, authenticated, service_role;" >/dev/null
 fi
+
+# PostgREST cachea el schema al arrancar; recargar tras tablas nuevas.
+docker exec "$DB_CONTAINER" psql -U postgres -d postgres -c "NOTIFY pgrst, 'reload schema';" >/dev/null 2>&1 || true
 
 echo "Migraciones Docker aplicadas."
