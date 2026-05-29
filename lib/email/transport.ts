@@ -17,7 +17,8 @@ export async function sendEmail(input: SendEmailInput): Promise<void> {
   const transport = nodemailer.createTransport({
     host: cfg.host,
     port: cfg.port,
-    secure: false,
+    secure: cfg.port === 465,
+    ...(cfg.user && cfg.pass ? { auth: { user: cfg.user, pass: cfg.pass } } : {}),
     tls: { rejectUnauthorized: false },
   });
   await transport.sendMail({

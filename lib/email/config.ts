@@ -4,6 +4,8 @@ export type EmailConfig = {
   port: number;
   from: string;
   fromName: string;
+  user?: string;
+  pass?: string;
 };
 
 export function getEmailConfig(): EmailConfig {
@@ -13,5 +15,7 @@ export function getEmailConfig(): EmailConfig {
     port: Number(process.env.SMTP_PORT ?? 1025),
     from: process.env.SMTP_FROM ?? 'noreply@vendorpass.local',
     fromName: process.env.SMTP_FROM_NAME ?? 'VendorPass',
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
   };
 }
