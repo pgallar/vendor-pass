@@ -9,6 +9,18 @@ import { DocumentList } from '@/components/vendor-pass/document-list';
 import { VendorComplianceSummary } from '@/components/vendor-pass/vendor-compliance-summary';
 import { Button } from '@/components/vendor-pass/button';
 import type { Vendor, VendorDocument } from '@/lib/types';
+import {
+  SharePassportLink,
+  CopyPassportUrlButton,
+  DownloadPassportPdfButton,
+} from '@/components/vendor-pass/share-passport-link';
+import {
+  authPassportPdfPath,
+  buildAuthPassportPdfUrl,
+  buildVerifyPageUrl,
+} from '@/lib/passport/verify-url';
+import { passportPdfFilename } from '@/lib/passport/pdf-filename';
+import { generateQrDataUrl } from '@/lib/passport/qr';
 import { Building2, Mail, User, MapPin, Calendar, Plus, Pencil, ShieldCheck } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
@@ -49,6 +61,9 @@ export default async function VendorDetailPage({ params }: { params: Promise<{ i
   const enriched = ds.map(d => ({ ...d, status: documentStatus(d) }));
   const vencidos = enriched.filter(d => d.status === 'vencido').length;
   const porVencer = enriched.filter(d => d.status === 'por_vencer').length;
+  const pageUrl = buildVerifyPageUrl(v.id);
+  const pdfUrl = buildAuthPassportPdfUrl(v.id);
+  const qrDataUrl = await generateQrDataUrl(pdfUrl);
 
   return (
     <AppShell>
@@ -63,12 +78,18 @@ export default async function VendorDetailPage({ params }: { params: Promise<{ i
           ]}
           actions={
             <div className="flex items-center gap-2">
+              <CopyPassportUrlButton url={pdfUrl} />
               <Button variant="outline" size="sm" asChild>
                 <Link href={`/verify/vendor/${v.id}`} className="inline-flex items-center gap-1.5">
                   <ShieldCheck size={13} aria-hidden="true" />
                   Pasaporte
                 </Link>
               </Button>
+              <DownloadPassportPdfButton
+                href={authPassportPdfPath(v.id)}
+                filename={passportPdfFilename(v.name)}
+                compact
+              />
               <Button variant="outline" size="sm" asChild>
                 <Link href={`/vendors/${v.id}/edit`} className="inline-flex items-center gap-1.5">
                   <Pencil size={13} aria-hidden="true" />
@@ -77,6 +98,16 @@ export default async function VendorDetailPage({ params }: { params: Promise<{ i
               </Button>
             </div>
           }
+        />
+
+        <SharePassportLink
+          pdfUrl={pdfUrl}
+          pdfDownloadPath={authPassportPdfPath(v.id)}
+          qrDataUrl={qrDataUrl}
+          pageUrl={pageUrl}
+          vendorName={v.name}
+          pdfFilename={passportPdfFilename(v.name)}
+          inputId={`passport-pdf-url-${v.id}`}
         />
 
         <div className="bg-card border border-border rounded-xl p-4 flex items-center justify-between gap-3">

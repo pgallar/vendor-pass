@@ -1,11 +1,16 @@
 import Link from 'next/link';
 import { ShieldCheck } from 'lucide-react';
 
-export function PublicShell({ children }: { children: React.ReactNode }) {
+export interface PublicShellProps {
+  children: React.ReactNode;
+  maxWidth?: 'max-w-lg' | 'max-w-xl' | 'max-w-2xl' | 'max-w-3xl' | 'max-w-4xl' | 'max-w-5xl';
+}
+
+export function PublicShell({ children, maxWidth = 'max-w-lg' }: PublicShellProps) {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border">
-        <div className="max-w-lg mx-auto px-4 py-4 flex items-center gap-2.5">
+        <div className={`${maxWidth} mx-auto px-4 py-4 flex items-center gap-2.5`}>
           <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0">
             <ShieldCheck size={18} className="text-primary-foreground" aria-hidden="true" />
           </div>
@@ -18,7 +23,7 @@ export function PublicShell({ children }: { children: React.ReactNode }) {
           </Link>
         </div>
       </header>
-      <main id="main-content" className="max-w-lg mx-auto px-4 py-6">
+      <main id="main-content" className={`${maxWidth} mx-auto px-4 py-6`}>
         {children}
       </main>
     </div>
