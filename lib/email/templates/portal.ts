@@ -1,8 +1,9 @@
 import { buildPlainText, wrapEmailLayout } from '@/lib/email/templates/layout';
 import { EMAIL_BRAND } from '@/lib/email/brand';
+import { resolveServerAppBaseUrl } from '@/lib/app-url';
 
 function appUrl(): string {
-  return process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
+  return resolveServerAppBaseUrl();
 }
 
 type Rendered = { subject: string; text: string; html: string };

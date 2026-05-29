@@ -1,3 +1,4 @@
+import { resolveServerAppBaseUrl } from '@/lib/app-url';
 import {
   buildPlainText,
   renderAlertTable,
@@ -27,7 +28,7 @@ const STATUS_LABEL: Record<DocumentStatus, string> = {
 };
 
 function appUrl(): string {
-  return process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
+  return resolveServerAppBaseUrl();
 }
 
 function sortAlerts(alerts: ExpirationAlertItem[]): ExpirationAlertItem[] {

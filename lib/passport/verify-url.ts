@@ -1,6 +1,8 @@
+import { resolveServerAppBaseUrl } from '@/lib/app-url';
+
 /** Base pública de la app, sin barra final. */
 export function appBaseUrl(): string {
-  return (process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000').replace(/\/$/, '');
+  return resolveServerAppBaseUrl();
 }
 
 /** Página web pública del pasaporte (estado en línea, siempre actualizado). */
