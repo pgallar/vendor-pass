@@ -10,6 +10,7 @@ export type ParityAuditResult = {
   missingInArkiv: string[];
   orphanInArkiv: string[];
   mismatches: Array<{ documentId: string; postgres: string; arkiv: string }>;
+  expectedMissingInArkiv: string[];
   ok: boolean;
 };
 
@@ -44,11 +45,20 @@ export async function auditArkivParity(options: AuditOptions = {}): Promise<Pari
   const arkivById = new Map(arkivEntities.map(e => [e.documentId, e]));
 
   const missingInArkiv: string[] = [];
+  const expectedMissingInArkiv: string[] = [];
   const mismatches: ParityAuditResult['mismatches'] = [];
 
   for (const doc of postgresDocs) {
-    const expected = documentStatus(doc);
     const arkiv = arkivById.get(doc.id);
+
+    // Los borradores / pendientes no se esperan en Arkiv: aún no se anclaron.
+    if (doc.lifecycle_status !== 'anchored') {
+      if (arkiv) arkivById.delete(doc.id); // si por algún motivo está, no es huérfano
+      else expectedMissingInArkiv.push(doc.id);
+      continue;
+    }
+
+    const expected = documentStatus(doc);
     if (!arkiv) {
       missingInArkiv.push(doc.id);
       continue;
@@ -68,6 +78,7 @@ export async function auditArkivParity(options: AuditOptions = {}): Promise<Pari
     missingInArkiv,
     orphanInArkiv,
     mismatches,
+    expectedMissingInArkiv,
     ok,
   };
 }
