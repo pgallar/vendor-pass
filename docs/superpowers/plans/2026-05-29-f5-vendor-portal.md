@@ -51,13 +51,13 @@
 ## Task 1: Migración — portal, workflow de revisión y RLS
 
 **Files:**
-- Create: `supabase/migrations/0007_vendor_portal.sql`
+- Create: `supabase/migrations/0009_vendor_portal.sql`
 
 > **Nota de numeración:** este archivo es `0009_vendor_portal.sql`. Orden de este set: Feature 2 = `0007`, Feature 4 = `0008`, Feature 5 = `0009` (el repo ya llega a `0006_api_keys.sql`). Mantené F2 < F4 < F5.
 
 - [ ] **Step 1: Escribir la migración**
 
-Create `supabase/migrations/0007_vendor_portal.sql`:
+Create `supabase/migrations/0009_vendor_portal.sql`:
 
 ```sql
 -- ── Portal del proveedor: invitaciones, membresías y workflow de revisión ──
@@ -197,7 +197,7 @@ Expected: ambos counts en `0` y las 4 columnas listadas.
 - [ ] **Step 4: Commit**
 
 ```bash
-git add supabase/migrations/0007_vendor_portal.sql
+git add supabase/migrations/0009_vendor_portal.sql
 git commit -m "feat(db): portal del proveedor (invites, members, review_status) + RLS"
 ```
 
@@ -1899,7 +1899,7 @@ git commit -m "chore(portal): ajustes finales tras verificación e2e/RLS"
 - **Feature 4 (timeline):** llamadas `recordDocumentEvent` declaradas como opcionales/comentadas con `try/catch` en submit (Task 8) y approve (Task 9). No rompen si F4 no existe.
 - **Feature 1 (pasaporte tras anchor):** no se modifica; solo se garantiza que el camino a `anchored` pasa por la aprobación. `verifyUrl` usa `/verify/[documentId]` (verificado: `app/verify/[documentId]/` existe), con nota de ajuste.
 
-**3. Placeholders y verificaciones pendientes:** sin TODOs ciegos. Marcadores deliberados con instrucción explícita: (a) numeración de migración `0007` (confirmada contra `supabase/migrations/` que ya llega a `0006`); (b) campos a agregar en `VendorDocument` (Task 2); (c) imports del design system (`form-field`, `app-shell`, `page-header`, `status-badge`) con nota de verificación contra archivos confirmados (`register/page.tsx`, `integrations/page.tsx`); (d) inserción en `app/vendors/[id]/page.tsx` adaptable al layout real (archivo ya modificado en el working tree); (e) punto de integración Feature 2.
+**3. Placeholders y verificaciones pendientes:** sin TODOs ciegos. Marcadores deliberados con instrucción explícita: (a) numeración de migración `0009` (confirmada contra `supabase/migrations/` que ya llega a `0006`; F2=0007, F4=0008, F5=0009); (b) campos a agregar en `VendorDocument` (Task 2); (c) imports del design system (`form-field`, `app-shell`, `page-header`, `status-badge`) con nota de verificación contra archivos confirmados (`register/page.tsx`, `integrations/page.tsx`); (d) inserción en `app/vendors/[id]/page.tsx` adaptable al layout real (archivo ya modificado en el working tree); (e) punto de integración Feature 2.
 
 **4. Consistencia de tipos/nombres:** `ReviewStatus` (Task 2) se usa en RLS (Task 1, mismos literales), en las páginas del portal (`REVIEW_LABEL`, Task 12) y en los endpoints (Tasks 8/9). `generateInviteToken`/`hashInviteToken`/`isInviteUsable`/`isValidTokenFormat` (Task 3) se consumen en invites/accept (Tasks 6/7). `requirePortalMember`/`listMemberVendors` (Task 4) se usan en API de subida (Task 8) y páginas del portal (Task 12). El prefijo `vpi_` y el regex `isValidTokenFormat` concuerdan con el token generado. Las rutas del portal coinciden entre páginas, redirects (`?next=`), el `PUBLIC_PREFIXES` del middleware (`/portal/accept`) y las URLs de los emails (`/portal/accept?token=`, `/portal/vendors/[id]`, `/vendors/[id]/reviews`, `/verify/[documentId]`). Las RLS de inserción/actualización (Task 1) y los `review_status` que escriben los endpoints (Tasks 8/9) son coherentes: el miembro nunca escribe `anchored`; solo el owner (sesión de dueño) lo hace en `approve`.
 
