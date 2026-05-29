@@ -1,8 +1,9 @@
 import { cn } from '@/lib/utils';
 import { StatusBadge } from './status-badge';
 import { DocumentRowActions } from './document-row-actions';
+import { AnchorDocumentButton } from './anchor-document-button';
 import type { VendorDocument, DocumentStatus } from '@/lib/types';
-import { FileText, Calendar, Plus, ShieldCheck } from 'lucide-react';
+import { FileText, Calendar, Plus, ShieldCheck, Lock } from 'lucide-react';
 import { Button } from './button';
 import Link from 'next/link';
 
@@ -24,6 +25,28 @@ function getDaysLabel(expiresAt: string, status: DocumentStatus): string | null 
   if (diff === 0) return 'vence hoy';
   if (diff <= 30) return `${diff} días`;
   return null;
+}
+
+const LIFECYCLE_LABEL: Record<Doc['lifecycle_status'], string> = {
+  draft: 'Borrador',
+  pending_anchor: 'Listo para anclar',
+  anchored: 'Anclado en Arkiv',
+};
+
+function LifecycleBadge({ status }: { status: Doc['lifecycle_status'] }) {
+  if (status === 'anchored') {
+    return (
+      <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+        <Lock size={10} aria-hidden="true" />
+        {LIFECYCLE_LABEL.anchored}
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded bg-secondary text-muted-foreground">
+      {LIFECYCLE_LABEL[status]}
+    </span>
+  );
 }
 
 function DocumentRow({ doc, vendorId }: { doc: Doc; vendorId?: string }) {
@@ -52,17 +75,21 @@ function DocumentRow({ doc, vendorId }: { doc: Doc; vendorId?: string }) {
           {doc.criticality === 'critical' && (
             <span className="text-[10px] font-medium text-muted-foreground">Crítico</span>
           )}
+          <LifecycleBadge status={doc.lifecycle_status} />
         </div>
       </div>
       <div className="flex items-center gap-1 shrink-0">
-        <Link
-          href={`/verify/${doc.id}`}
-          className="inline-flex items-center gap-1 text-xs text-primary font-medium min-h-11 px-2"
-          title="Verificar en Arkiv"
-        >
-          <ShieldCheck size={14} aria-hidden="true" />
-          <span className="hidden sm:inline">Verificar</span>
-        </Link>
+        {doc.lifecycle_status === 'anchored' && (
+          <Link
+            href={`/verify/${doc.id}`}
+            className="inline-flex items-center gap-1 text-xs text-primary font-medium min-h-11 px-2"
+            title="Verificar en Arkiv"
+          >
+            <ShieldCheck size={14} aria-hidden="true" />
+            <span className="hidden sm:inline">Verificar</span>
+          </Link>
+        )}
+        {doc.lifecycle_status !== 'anchored' && <AnchorDocumentButton documentId={doc.id} />}
         {vendorId && <DocumentRowActions documentId={doc.id} vendorId={vendorId} />}
         <StatusBadge status={doc.status} size="sm" />
       </div>

@@ -150,9 +150,12 @@ export function DocumentForm({ vendorId, documentId, initial, submitLabel, onCan
     return Object.keys(newErrors).length === 0;
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function persist(anchorAfter: boolean) {
     if (!validate()) return;
+    if (anchorAfter && !form.file_hash) {
+      setErrors(prev => ({ ...prev, file_url: 'Subí un archivo de evidencia antes de anclar.' }));
+      return;
+    }
     setLoading(true);
     const payload = {
       ...form,
@@ -167,9 +170,33 @@ export function DocumentForm({ vendorId, documentId, initial, submitLabel, onCan
         body: JSON.stringify(isEdit ? payload : { ...payload, vendor_id: vendorId }),
       },
     );
+    if (!res.ok) {
+      setLoading(false);
+      const data = await res.json().catch(() => ({}));
+      alert(data.error ?? (isEdit ? 'Error actualizando documento' : 'Error creando documento'));
+      return;
+    }
+
+    // En el alta, opcionalmente anclamos el documento recién creado.
+    if (!isEdit && anchorAfter) {
+      const { document } = await res.json();
+      const anchorRes = await fetch(`/api/documents/${document.id}/anchor`, { method: 'POST' });
+      if (!anchorRes.ok) {
+        setLoading(false);
+        const data = await anchorRes.json().catch(() => ({}));
+        alert(data.error ?? 'El documento se guardó como borrador, pero falló el anclaje en Arkiv.');
+        router.push(`/vendors/${vendorId}`);
+        return;
+      }
+    }
+
     setLoading(false);
-    if (res.ok) router.push(`/vendors/${vendorId}`);
-    else alert(isEdit ? 'Error actualizando documento' : 'Error creando documento');
+    router.push(`/vendors/${vendorId}`);
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    void persist(false);
   }
 
   return (
@@ -359,9 +386,33 @@ export function DocumentForm({ vendorId, documentId, initial, submitLabel, onCan
       </section>
 
       <div className="flex flex-col gap-2">
-        <Button type="submit" variant="primary" size="lg" loading={loading} className="w-full min-h-11">
-          {loading ? 'Guardando…' : submitLabel}
-        </Button>
+        {!isEdit ? (
+          <>
+            <Button
+              type="button"
+              variant="primary"
+              size="lg"
+              loading={loading}
+              className="w-full min-h-11"
+              onClick={() => void persist(true)}
+            >
+              {loading ? 'Guardando…' : 'Guardar y anclar en Arkiv'}
+            </Button>
+            <Button
+              type="submit"
+              variant="outline"
+              size="lg"
+              className="w-full min-h-11"
+              disabled={loading}
+            >
+              Guardar borrador
+            </Button>
+          </>
+        ) : (
+          <Button type="submit" variant="primary" size="lg" loading={loading} className="w-full min-h-11">
+            {loading ? 'Guardando…' : submitLabel}
+          </Button>
+        )}
         <Button
           type="button"
           variant="ghost"
