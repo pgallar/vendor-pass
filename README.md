@@ -31,6 +31,8 @@ La app requiere **iniciar sesión o registrarse** (`/login`, `/register`). El st
 
 **Verificación de cuenta:** tras registrarte, debes confirmar tu correo. Los emails de auth (confirmación y recuperación de contraseña) se capturan en desarrollo con **Mailpit**: http://localhost:8025
 
+Las plantillas de correo usan la marca VendorPass (indigo/slate). En Docker, GoTrue las obtiene del servicio `email-templates` (`docker/email-templates/`). Con `npx supabase start`, las mismas plantillas se leen desde `supabase/config.toml`. En **Supabase hosted**, copiá el HTML de esos archivos en *Authentication → Email Templates* del dashboard.
+
 | Ruta | Uso |
 |------|-----|
 | `/register` | Alta de cuenta → revisa Mailpit y confirma el enlace |

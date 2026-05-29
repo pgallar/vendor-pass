@@ -238,12 +238,19 @@ pass = "mailpit"
 admin_email = "noreply@vendorpass.local"
 sender_name = "VendorPass"
 
-# Uncomment to customize email template
+# Plantillas HTML con marca VendorPass (mismas que docker/email-templates/)
+[auth.email.template.confirmation]
+subject = "VendorPass: Confirma tu cuenta"
+content_path = "../docker/email-templates/confirmation.html"
+
+[auth.email.template.recovery]
+subject = "VendorPass: Restablece tu contraseña"
+content_path = "../docker/email-templates/recovery.html"
+
 # [auth.email.template.invite]
 # subject = "You have been invited"
 # content_path = "./supabase/templates/invite.html"
 
-# Uncomment to customize notification email template
 # [auth.email.notification.password_changed]
 # enabled = true
 # subject = "Your password has been changed"
