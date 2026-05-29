@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { LayoutDashboard, Users, CalendarClock, ShieldCheck, Database } from 'lucide-react';
+import { LayoutDashboard, Users, CalendarClock, ShieldCheck, Database, KeyRound } from 'lucide-react';
 import { AuthUserFooter } from '@/components/vendor-pass/auth-user-footer';
 
 const NAV_ITEMS = [
@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { label: 'Proveedores', href: '/vendors', icon: Users, match: (p: string) => p.startsWith('/vendors') && p !== '/vendors/new' },
   { label: 'Vencimientos', href: '/expirations', icon: CalendarClock, match: (p: string) => p.startsWith('/expirations') },
   { label: 'Auditoría Arkiv', href: '/admin/arkiv', icon: Database, match: (p: string) => p.startsWith('/admin/arkiv') },
+  { label: 'Integraciones', href: '/integrations', icon: KeyRound, match: (p: string) => p.startsWith('/integrations') },
 ];
 
 interface NavLinkProps {

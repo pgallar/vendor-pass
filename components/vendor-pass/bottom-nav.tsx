@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { LayoutDashboard, Users, CalendarClock, Plus } from 'lucide-react';
+import { LayoutDashboard, Users, CalendarClock, KeyRound, User } from 'lucide-react';
 
 // ─── Nav config ───────────────────────────────────────────────────────────────
 
@@ -11,7 +11,8 @@ const NAV_ITEMS = [
   { label: 'Inicio', href: '/', icon: LayoutDashboard, match: (p: string) => p === '/' },
   { label: 'Proveedores', href: '/vendors', icon: Users, match: (p: string) => p.startsWith('/vendors') && !p.includes('/new') },
   { label: 'Vencimientos', href: '/expirations', icon: CalendarClock, match: (p: string) => p.startsWith('/expirations') },
-  { label: 'Nuevo', href: '/vendors/new', icon: Plus, match: (p: string) => p === '/vendors/new' },
+  { label: 'Integr.', href: '/integrations', icon: KeyRound, match: (p: string) => p.startsWith('/integrations') },
+  { label: 'Perfil', href: '/settings', icon: User, match: (p: string) => p.startsWith('/settings') },
 ] as const;
 
 // ─── Component ────────────────────────────────────────────────────────────────
