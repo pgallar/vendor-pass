@@ -15,6 +15,9 @@ export function LandingFooter() {
           </div>
         </div>
         <div className="flex items-center gap-6 text-sm text-muted-foreground">
+          <Link href="/docs" className="hover:text-foreground">
+            Documentación
+          </Link>
           <Link href="/login" className="hover:text-foreground">
             Acceder
           </Link>

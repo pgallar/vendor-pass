@@ -23,6 +23,9 @@ export function LandingHeader({ authenticated }: { authenticated: boolean }) {
           <a href="#arkiv" className="text-sm font-medium text-muted-foreground hover:text-foreground">
             Arkiv
           </a>
+          <Link href="/docs" className="text-sm font-medium text-muted-foreground hover:text-foreground">
+            Documentación
+          </Link>
         </nav>
 
         <div className="flex items-center gap-2">
