@@ -15,20 +15,26 @@ export type ParityAuditResult = {
 
 type AuditOptions = {
   supabase?: SupabaseClient;
+  /** Scope por dueño cuando se usa el cliente service-role (sin RLS), p. ej. auth por API key. */
+  userId?: string;
 };
 
 export async function auditArkivParity(options: AuditOptions = {}): Promise<ParityAuditResult> {
   const sb = options.supabase ?? supabaseAdmin();
+  const scoped = options.supabase != null || options.userId != null;
 
-  const [{ data: docs, error }, { data: vendors }] = await Promise.all([
-    sb.from('documents').select('*'),
-    sb.from('vendors').select('id'),
-  ]);
+  let vendorsQuery = sb.from('vendors').select('id');
+  if (options.userId) vendorsQuery = vendorsQuery.eq('user_id', options.userId);
+  const { data: vendors, error: vendorsError } = await vendorsQuery;
+  if (vendorsError) throw vendorsError;
+  const vendorIds = new Set((vendors ?? []).map(v => v.id));
+
+  let docsQuery = sb.from('documents').select('*');
+  if (options.userId) docsQuery = docsQuery.in('vendor_id', [...vendorIds]);
+  const { data: docs, error } = await docsQuery;
   if (error) throw error;
 
-  const vendorIds = new Set((vendors ?? []).map(v => v.id));
   const postgresDocs = (docs ?? []) as VendorDocument[];
-  const scoped = options.supabase != null;
 
   const store = getStore();
   const allArkiv = await store.listAll();
