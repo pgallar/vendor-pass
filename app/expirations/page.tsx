@@ -123,6 +123,10 @@ export default async function ExpirationsPage({
 
   const vendorNames = new Map((vendors ?? []).map(v => [v.id, v.name as string]));
 
+  // Filtramos la data de Arkiv (pública) cruzándola con los vendors del usuario
+  const myExpired = expired.filter(doc => vendorNames.has(doc.vendorId));
+  const mySoon = soon.filter(doc => vendorNames.has(doc.vendorId));
+
   const windowLinks = [
     { label: '7 días', value: '7' },
     { label: '30 días', value: '30' },
@@ -155,7 +159,7 @@ export default async function ExpirationsPage({
           }
         />
 
-        {expired.length === 0 && soon.length === 0 ? (
+        {myExpired.length === 0 && mySoon.length === 0 ? (
           <EmptyState
             icon={CalendarClock}
             title="Todo al día"
@@ -163,8 +167,8 @@ export default async function ExpirationsPage({
           />
         ) : (
           <>
-            <ExpirySection title="Vencidos" rows={expired} vendorNames={vendorNames} />
-            <ExpirySection title={`Por vencer (${win} días)`} rows={soon} vendorNames={vendorNames} />
+            <ExpirySection title="Vencidos" rows={myExpired} vendorNames={vendorNames} />
+            <ExpirySection title={`Por vencer (${win} días)`} rows={mySoon} vendorNames={vendorNames} />
           </>
         )}
       </div>
