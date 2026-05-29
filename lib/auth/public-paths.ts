@@ -7,6 +7,7 @@ const PUBLIC_PREFIXES = [
   '/verify-email',
   '/verify',
   '/portal/accept',
+  '/docs',
 ];
 
 /** `/` (landing) is public by exact match; the rest match by prefix. */

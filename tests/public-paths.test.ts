@@ -24,4 +24,9 @@ describe('isPublicPath', () => {
   it('does not let the root prefix-match every path', () => {
     expect(isPublicPath('/vendors/123')).toBe(false);
   });
+
+  it('treats the docs section as public', () => {
+    expect(isPublicPath('/docs')).toBe(true);
+    expect(isPublicPath('/docs/proveedores')).toBe(true);
+  });
 });
