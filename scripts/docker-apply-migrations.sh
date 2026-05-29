@@ -37,6 +37,14 @@ else
     "GRANT ALL ON TABLE public.api_keys TO anon, authenticated, service_role;" >/dev/null
 fi
 
+# 0007 document lifecycle
+if ! docker exec "$DB_CONTAINER" psql -U postgres -d postgres -tAc \
+  "SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='documents' AND column_name='lifecycle_status'" | grep -q 1; then
+  apply "$ROOT/supabase/migrations/0007_document_lifecycle.sql"
+else
+  echo "⊙ 0007_document_lifecycle.sql ya aplicada (columna lifecycle_status existe)"
+fi
+
 # PostgREST cachea el schema al arrancar; recargar tras tablas nuevas.
 docker exec "$DB_CONTAINER" psql -U postgres -d postgres -c "NOTIFY pgrst, 'reload schema';" >/dev/null 2>&1 || true
 
