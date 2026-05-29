@@ -19,6 +19,8 @@ services:
       - ./supabase/migrations/0002_document_file_hash.sql:/docker-entrypoint-initdb.d/12-file-hash.sql:ro
       - ./supabase/migrations/0003_auth_user_ownership.sql:/docker-entrypoint-initdb.d/13-auth.sql:ro
       - ./supabase/migrations/0004_email_notifications.sql:/docker-entrypoint-initdb.d/15-email-notifications.sql:ro
+      - ./supabase/migrations/0005_profiles.sql:/docker-entrypoint-initdb.d/16-profiles.sql:ro
+      - ./supabase/migrations/0006_api_keys.sql:/docker-entrypoint-initdb.d/17-api-keys.sql:ro
       - ./docker/postgres/11-grants.sql:/docker-entrypoint-initdb.d/14-grants.sql:ro
       - ./supabase/seed.sql:/docker-entrypoint-initdb.d/20-seed.sql:ro
     healthcheck:
