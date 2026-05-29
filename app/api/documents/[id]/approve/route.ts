@@ -22,15 +22,6 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     return NextResponse.json({ error: 'Solo se pueden aprobar documentos enviados' }, { status: 409 });
   }
 
-  const nextStatus = doAnchor ? 'anchored' : 'approved';
-  const { data: updated, error: updErr } = await auth.supabase
-    .from('documents')
-    .update({ review_status: nextStatus, rejection_reason: null })
-    .eq('id', id)
-    .select()
-    .single();
-  if (updErr || !updated) return NextResponse.json({ error: updErr?.message ?? 'Error' }, { status: 400 });
-
   const { data: vendor } = await auth.supabase
     .from('vendors')
     .select('name, owner_email')
@@ -39,7 +30,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
   if (doAnchor) {
     try {
-      await anchorDocument(auth.supabase, updated as VendorDocument, vendor, auth.user.id);
+      await anchorDocument(auth.supabase, doc as VendorDocument, vendor, auth.user.id);
     } catch (err) {
       return NextResponse.json(
         { error: err instanceof Error ? err.message : 'Error al anclar en Arkiv' },
@@ -47,6 +38,15 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       );
     }
   }
+
+  const nextStatus = doAnchor ? 'anchored' : 'approved';
+  const { data: updated, error: updErr } = await auth.supabase
+    .from('documents')
+    .update({ review_status: nextStatus, rejection_reason: null })
+    .eq('id', id)
+    .select()
+    .single();
+  if (updErr || !updated) return NextResponse.json({ error: updErr?.message ?? 'Error' }, { status: 400 });
 
   try {
     const submitterEmail = await resolveSubmitterEmail(doc.vendor_id, doc.submitted_by);

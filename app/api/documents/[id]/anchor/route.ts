@@ -24,9 +24,15 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
 
   const { data: vendor } = await auth.supabase
     .from('vendors')
-    .select('name,owner_email,owner_name')
+    .select('user_id,name,owner_email,owner_name')
     .eq('id', typed.vendor_id)
     .single();
+  if (!vendor || vendor.user_id !== auth.user.id) {
+    return NextResponse.json(
+      { error: 'Solo el responsable del proveedor puede anclar documentos' },
+      { status: 403 },
+    );
+  }
 
   try {
     const result = await anchorDocument(auth.supabase, typed, vendor, auth.user.id);
