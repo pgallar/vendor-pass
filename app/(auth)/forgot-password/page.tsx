@@ -32,7 +32,14 @@ function ForgotPasswordForm() {
     setLoading(false);
 
     if (resetError) {
-      setError(resetError.message);
+      console.error('Reset password error:', resetError);
+
+      let errorMessage = resetError.message;
+      if (resetError.message.includes('rate limit') || resetError.status === 429) {
+        errorMessage = 'El sistema de correos está temporalmente saturado. Por favor, intenta de nuevo en unos minutos.';
+      }
+
+      setError(errorMessage);
       return;
     }
 
@@ -54,11 +61,15 @@ function ForgotPasswordForm() {
             Si existe una cuenta con ese correo, enviamos instrucciones para restablecer la contraseña.
           </p>
           <p className="text-xs text-muted-foreground">
-            Revisa{' '}
-            <a href="http://localhost:8025" className="text-primary font-medium" target="_blank" rel="noreferrer">
-              Mailpit
-            </a>{' '}
-            en desarrollo local.
+            Revisa tu bandeja de entrada (incluyendo spam).
+            {process.env.NODE_ENV === 'development' && (
+              <>
+                {' '}(Desarrollo local:{' '}
+                <a href="http://localhost:8025" className="text-primary font-medium" target="_blank" rel="noreferrer">
+                  visor de correos
+                </a>)
+              </>
+            )}
           </p>
         </div>
       ) : (

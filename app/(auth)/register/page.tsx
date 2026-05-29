@@ -38,11 +38,16 @@ function RegisterForm() {
     setLoading(false);
 
     if (signUpError) {
-      setError(
-        signUpError.message.includes('already registered')
-          ? 'Este correo ya está registrado.'
-          : signUpError.message,
-      );
+      console.error('Sign up error:', signUpError);
+
+      let errorMessage = signUpError.message;
+      if (signUpError.message.includes('already registered')) {
+        errorMessage = 'Este correo ya está registrado.';
+      } else if (signUpError.message.includes('rate limit') || signUpError.status === 429) {
+        errorMessage = 'El sistema de correos está temporalmente saturado. Por favor, intenta de nuevo en unos minutos.';
+      }
+
+      setError(errorMessage);
       return;
     }
 
@@ -57,13 +62,15 @@ function RegisterForm() {
           Enviamos un enlace de confirmación a <strong className="text-foreground">{email}</strong>.
           Haz clic en el enlace para activar tu cuenta.
         </p>
-        <p className="text-xs text-muted-foreground">
-          En desarrollo, abre{' '}
-          <a href="http://localhost:8025" className="text-primary font-medium" target="_blank" rel="noreferrer">
-            Mailpit
-          </a>{' '}
-          para ver el correo.
-        </p>
+        {process.env.NODE_ENV === 'development' && (
+          <p className="text-xs text-muted-foreground">
+            En desarrollo, abre el{' '}
+            <a href="http://localhost:8025" className="text-primary font-medium" target="_blank" rel="noreferrer">
+              visor de correos
+            </a>{' '}
+            para ver el correo.
+          </p>
+        )}
         <Button variant="outline" size="lg" className="w-full min-h-11" asChild>
           <Link href={`/verify-email?email=${encodeURIComponent(email)}`}>Reenviar confirmación</Link>
         </Button>

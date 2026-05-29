@@ -38,7 +38,14 @@ function VerifyEmailForm() {
     setLoading(false);
 
     if (resendError) {
-      setError(resendError.message);
+      console.error('Resend email error:', resendError);
+
+      let errorMessage = resendError.message;
+      if (resendError.message.includes('rate limit') || resendError.status === 429) {
+        errorMessage = 'El sistema de correos está temporalmente saturado. Por favor, intenta de nuevo en unos minutos.';
+      }
+
+      setError(errorMessage);
       return;
     }
 
@@ -60,11 +67,15 @@ function VerifyEmailForm() {
             Si existe una cuenta pendiente con <strong>{email}</strong>, enviamos un nuevo correo.
           </p>
           <p className="text-xs text-muted-foreground">
-            Revisa{' '}
-            <a href="http://localhost:8025" className="text-primary font-medium" target="_blank" rel="noreferrer">
-              Mailpit
-            </a>{' '}
-            en desarrollo local.
+            Revisa tu bandeja de entrada (incluyendo spam).
+            {process.env.NODE_ENV === 'development' && (
+              <>
+                {' '}(Desarrollo local:{' '}
+                <a href="http://localhost:8025" className="text-primary font-medium" target="_blank" rel="noreferrer">
+                  visor de correos
+                </a>)
+              </>
+            )}
           </p>
         </div>
       ) : (
