@@ -12,7 +12,9 @@
     "backfill": "tsx scripts/backfill-arkiv.ts",
     "sync:arkiv": "tsx scripts/sync-arkiv-status.ts",
     "send:emails": "tsx scripts/send-expiration-emails.ts",
-    "verify:arkiv": "tsx scripts/verify-arkiv.ts"
+    "verify:arkiv": "tsx scripts/verify-arkiv.ts",
+    "db:migrate:docker": "bash scripts/docker-apply-migrations.sh",
+    "smoke:profile": "tsx scripts/smoke-profile-api.ts"
   },
   "dependencies": {
     "@arkiv-network/sdk": "^0.6.8",

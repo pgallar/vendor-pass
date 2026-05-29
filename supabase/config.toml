@@ -233,6 +233,8 @@ otp_expiry = 3600
 enabled = true
 host = "127.0.0.1"
 port = 1025
+user = "mailpit"
+pass = "mailpit"
 admin_email = "noreply@vendorpass.local"
 sender_name = "VendorPass"
 
