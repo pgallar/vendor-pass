@@ -25,6 +25,8 @@ function doc(overrides: Partial<VendorDocument> = {}): VendorDocument {
     lifecycle_status: 'draft',
     anchored_at: null,
     arkiv_entity_key: null,
+    supersedes_document_id: null,
+    superseded_by_document_id: null,
     ...overrides,
   };
 }

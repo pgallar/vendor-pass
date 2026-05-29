@@ -141,6 +141,17 @@ npm run sync:arkiv
 npm run verify:arkiv
 ```
 
+## ARKIV x PunaTech Hackathon
+
+VendorPass utiliza Arkiv como su capa de datos principal para la validación, estados de cumplimiento y trazabilidad de IA, alineándose con los requisitos de la hackaton:
+
+- **PROJECT_ATTRIBUTE (`vendor-pass-2026`)**: Todas las entidades y consultas están particionadas usando este atributo único (`project`), asegurando que los datos no colisionen con otros proyectos en el mismo entorno.
+- **Modelo de Entidades**:
+  - `vendor_document_validation`: Representa el estado actual de cumplimiento de un documento (vigente, por vencer, vencido). Los atributos indexados incluyen `vendorId`, `documentType`, `status`, y las fechas convertidas a valores numéricos (`issuedAtMs`, `expiresAtMs`) que permiten realizar consultas de rango de manera eficiente.
+  - `ai_audit_log`: Un registro inmutable generado cada vez que nuestra IA (OpenAI/OpenRouter) extrae datos de un documento. Cuenta con atributos como `model` y `confidence`. Esto ofrece trazabilidad real y transparente sobre las decisiones automatizadas de los agentes de IA.
+- **Ownership y Wallet**: La aplicación actúa como un **Oráculo de cumplimiento**, operando a través de una wallet servidora (cuyas credenciales se manejan mediante variables de entorno). Esto asegura los registros mientras brinda una experiencia fluida al usuario final, que no necesita gestionar claves privadas, firmar transacciones ni entender conceptos de blockchain.
+- **Ciclo de vida (expiresIn)**: Las entidades en Arkiv tienen un `expiresIn` que se calcula programáticamente de acuerdo con la fecha real de vencimiento del documento, y de 30 días para los registros de auditoría de la IA.
+
 ## Stack
 
 Next.js 16, Postgres, PostgREST, Supabase JS, MinIO (S3), Arkiv (`@arkiv-network/sdk`), Vitest, Tailwind CSS.

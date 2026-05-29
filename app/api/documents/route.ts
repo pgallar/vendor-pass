@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { requireUser } from '@/lib/supabase/api-auth';
 import { anchorDocument } from '@/lib/arkiv/anchor';
+import { recordDocumentEvent } from '@/lib/events/record';
 import type { LifecycleStatus, VendorDocument } from '@/lib/types';
 
 export async function GET() {
@@ -47,6 +48,14 @@ export async function POST(req: Request) {
 
   const typed = doc as VendorDocument;
 
+  await recordDocumentEvent({
+    documentId: typed.id,
+    eventType: 'created',
+    actorUserId: auth.user.id,
+    payload: { document: typed },
+    supabase: auth.supabase,
+  });
+
   // Modo compatibilidad para demos: anclar al guardar. NO usar en producción.
   if (process.env.ANCHOR_ON_SAVE === 'true' && typed.file_hash) {
     const { data: vendor } = await auth.supabase
@@ -55,7 +64,7 @@ export async function POST(req: Request) {
       .eq('id', typed.vendor_id)
       .single();
     try {
-      const result = await anchorDocument(auth.supabase, typed, vendor);
+      const result = await anchorDocument(auth.supabase, typed, vendor, auth.user.id);
       return NextResponse.json({ document: result.document }, { status: 201 });
     } catch {
       // Si el anclaje automático falla, el documento igual queda creado como borrador.

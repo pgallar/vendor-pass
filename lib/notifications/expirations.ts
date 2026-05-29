@@ -66,6 +66,7 @@ export async function sendExpirationNotifications(
   const pendingByEmail = new Map<string, PendingAlert[]>();
 
   for (const doc of (docs ?? []) as VendorDocument[]) {
+    if (doc.superseded_by_document_id) continue;
     const vendor = vendorById.get(doc.vendor_id);
     const email = vendor?.owner_email?.trim();
     if (!email) continue;

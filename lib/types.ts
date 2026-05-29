@@ -32,6 +32,49 @@ export interface VendorDocument {
   lifecycle_status: LifecycleStatus;
   anchored_at: string | null;
   arkiv_entity_key: string | null;
+  supersedes_document_id: string | null;
+  superseded_by_document_id: string | null;
+}
+
+/** Tipos de evento del historial inmutable de un documento. */
+export type DocumentEventType =
+  | 'created'
+  | 'anchored'
+  | 'updated'
+  | 'status_recomputed'
+  | 'renewed'
+  | 'revoked'
+  | 'file_replaced';
+
+/** Payload por tipo de evento (lo que se guarda en jsonb y se ancla en Arkiv). */
+export interface DocumentEventPayloads {
+  created: { snapshot: Record<string, unknown> };
+  anchored: { entityKey: string; status: DocumentStatus; fileHash: string | null };
+  updated: { changes: Record<string, { from: unknown; to: unknown }> };
+  status_recomputed: { oldStatus: DocumentStatus; newStatus: DocumentStatus };
+  renewed: { supersedesDocumentId: string };
+  revoked: { reason: string };
+  file_replaced: { oldHash: string | null; newHash: string | null };
+}
+
+/** Fila de document_events tal como la devuelve Postgres. */
+export interface DocumentEvent {
+  id: string;
+  document_id: string;
+  event_type: DocumentEventType;
+  actor_user_id: string | null;
+  payload: Record<string, unknown>;
+  created_at: string;
+}
+
+/** Evento serializado para anclar/consultar en Arkiv (no sensible). */
+export interface ArkivDocumentEvent {
+  documentId: string;
+  vendorId: string;
+  eventType: DocumentEventType;
+  occurredAt: string;
+  payload: Record<string, unknown>;
+  parentDocumentId: string | null;
 }
 
 export interface VendorWithStatus extends Vendor {

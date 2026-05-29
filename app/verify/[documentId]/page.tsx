@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { resolveValidationLookup } from '@/lib/arkiv/lookup';
+import { listPublicEvents } from '@/lib/events/public';
 import { normalizeEvidenceUrl } from '@/lib/storage/evidence-url';
 import { getStoreSource } from '@/lib/arkiv/validations';
 import { PublicShell } from '@/components/vendor-pass/public-shell';
@@ -45,6 +46,13 @@ export default async function VerifyPage({ params }: { params: Promise<{ documen
 
   const { entity, entityKey, resolvedFrom } = lookup;
   const evidenceUrl = normalizeEvidenceUrl(entity.fileUrl);
+  const publicEvents = await listPublicEvents(documentId);
+
+  const EVENT_LABELS: Record<string, string> = {
+    anchored: 'Anclado en Arkiv',
+    status_recomputed: 'Estado recalculado',
+    renewed: 'Renovado',
+  };
 
   return (
     <PublicShell>
@@ -166,6 +174,25 @@ export default async function VerifyPage({ params }: { params: Promise<{ documen
             </Link>
           )}
         </section>
+
+        {publicEvents.length > 0 && (
+          <section className="bg-card border border-border rounded-xl p-4 flex flex-col gap-3">
+            <h2 className="text-sm font-semibold text-foreground">Historial verificable</h2>
+            <ol className="flex flex-col gap-2">
+              {publicEvents.map((e, i) => (
+                <li key={`${e.eventType}-${e.occurredAt}-${i}`} className="flex items-center justify-between gap-3 text-sm">
+                  <span className="text-foreground">{EVENT_LABELS[e.eventType] ?? e.eventType}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {e.occurredAt ? new Date(e.occurredAt).toLocaleDateString('es-MX') : ''}
+                  </span>
+                </li>
+              ))}
+            </ol>
+            <p className="text-[11px] text-muted-foreground">
+              Solo se muestran eventos no sensibles registrados en la red verificable.
+            </p>
+          </section>
+        )}
       </div>
     </PublicShell>
   );

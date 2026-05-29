@@ -3,7 +3,10 @@ import { createClient } from '@/lib/supabase/server';
 import { AppShell } from '@/components/vendor-pass/app-shell';
 import { PageHeader } from '@/components/vendor-pass/page-header';
 import { DocumentForm } from '@/components/vendor-pass/document-form';
+import { DocumentEventTimeline } from '@/components/vendor-pass/document-event-timeline';
+import { RenewDocumentButton } from '@/components/vendor-pass/renew-document-button';
 import { EditDocumentClient } from './edit-document-client';
+import { documentStatus } from '@/lib/status';
 import type { VendorDocument } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
@@ -50,6 +53,14 @@ export default async function EditDocumentPage({
             notes: d.notes ?? '',
           }}
         />
+
+        {d.lifecycle_status === 'anchored' &&
+          documentStatus(d) !== 'vigente' &&
+          !d.superseded_by_document_id && (
+            <RenewDocumentButton documentId={docId} vendorId={vendorId} />
+          )}
+
+        <DocumentEventTimeline documentId={docId} />
       </div>
     </AppShell>
   );

@@ -29,7 +29,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     .single();
 
   try {
-    const result = await anchorDocument(auth.supabase, typed, vendor);
+    const result = await anchorDocument(auth.supabase, typed, vendor, auth.user.id);
     return NextResponse.json({
       document: result.document,
       arkiv_entity_key: result.arkivEntityKey,

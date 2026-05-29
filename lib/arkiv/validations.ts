@@ -4,6 +4,9 @@ import { isExpiringWithinDays } from './dates';
 import { asc, eq } from '@arkiv-network/sdk/query';
 import type { Hex } from 'viem';
 
+export const PROJECT_SLUG = process.env.PROJECT_SLUG || 'vendor-pass-2026';
+
+
 export interface ValidationEntity {
   vendorId: string;
   documentId: string;
@@ -38,14 +41,20 @@ export interface ValidationStore {
 }
 
 function entityAttributes(entity: ValidationEntity) {
+  const issuedAtMs = entity.issuedAt ? new Date(entity.issuedAt + 'T00:00:00Z').getTime() : 0;
+  const expiresAtMs = entity.expiresAt ? new Date(entity.expiresAt + 'T23:59:59Z').getTime() : 0;
+
   return [
+    { key: 'project', value: PROJECT_SLUG },
     { key: 'entityType', value: ENTITY_TYPE },
     { key: 'documentId', value: entity.documentId },
     { key: 'vendorId', value: entity.vendorId },
     { key: 'documentType', value: entity.documentType },
     { key: 'documentName', value: entity.documentName },
     { key: 'issuedAt', value: entity.issuedAt },
+    { key: 'issuedAtMs', value: issuedAtMs },
     { key: 'expiresAt', value: entity.expiresAt },
+    { key: 'expiresAtMs', value: expiresAtMs },
     { key: 'status', value: entity.status },
     { key: 'criticality', value: entity.criticality },
     ...(entity.owner ? [{ key: 'owner', value: entity.owner }] : []),
@@ -120,7 +129,7 @@ export function createArkivStore(): ValidationStore {
     const cached = entityKeyByDocumentId.get(documentId);
     if (cached) return cached;
     const result = await pub.buildQuery()
-      .where([eq('entityType', ENTITY_TYPE), eq('documentId', documentId)])
+      .where([eq('project', PROJECT_SLUG), eq('entityType', ENTITY_TYPE), eq('documentId', documentId)])
       .fetch();
     const key = result.entities[0]?.key;
     if (key) entityKeyByDocumentId.set(documentId, key);
@@ -129,18 +138,18 @@ export function createArkivStore(): ValidationStore {
 
   async function queryByStatus(status: DocumentStatus): Promise<ValidationEntity[]> {
     const result = await pub.buildQuery()
-      .where([eq('entityType', ENTITY_TYPE), eq('status', status)])
+      .where([eq('project', PROJECT_SLUG), eq('entityType', ENTITY_TYPE), eq('status', status)])
       .withPayload(true)
-      .orderBy(asc('expiresAt', 'string'))
+      .orderBy(asc('expiresAtMs', 'number'))
       .fetch();
     return result.entities.map(parseEntity);
   }
 
   async function queryAll(): Promise<ValidationEntity[]> {
     const result = await pub.buildQuery()
-      .where(eq('entityType', ENTITY_TYPE))
+      .where([eq('project', PROJECT_SLUG), eq('entityType', ENTITY_TYPE)])
       .withPayload(true)
-      .orderBy(asc('expiresAt', 'string'))
+      .orderBy(asc('expiresAtMs', 'number'))
       .fetch();
     return result.entities.map(parseEntity);
   }
@@ -178,7 +187,7 @@ export function createArkivStore(): ValidationStore {
     },
     async getByDocumentId(documentId) {
       const result = await pub.buildQuery()
-        .where([eq('entityType', ENTITY_TYPE), eq('documentId', documentId)])
+        .where([eq('project', PROJECT_SLUG), eq('entityType', ENTITY_TYPE), eq('documentId', documentId)])
         .withPayload(true)
         .fetch();
       const row = result.entities[0];
@@ -191,9 +200,9 @@ export function createArkivStore(): ValidationStore {
     },
     async listByVendor(vendorId) {
       const result = await pub.buildQuery()
-        .where([eq('entityType', ENTITY_TYPE), eq('vendorId', vendorId)])
+        .where([eq('project', PROJECT_SLUG), eq('entityType', ENTITY_TYPE), eq('vendorId', vendorId)])
         .withPayload(true)
-        .orderBy(asc('expiresAt', 'string'))
+        .orderBy(asc('expiresAtMs', 'number'))
         .fetch();
       return result.entities.map(parseEntity);
     },

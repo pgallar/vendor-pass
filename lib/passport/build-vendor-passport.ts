@@ -124,6 +124,7 @@ export async function buildVendorPassport(vendorId: string): Promise<VendorPassp
     .from('documents')
     .select('*')
     .eq('vendor_id', vendorId)
+    .is('superseded_by_document_id', null)
     .order('expires_at');
 
   let arkivEntities: ValidationEntity[] = [];

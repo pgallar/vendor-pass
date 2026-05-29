@@ -2,6 +2,7 @@ import type OpenAI from 'openai';
 import { AI_EXTRACTION_MODEL, getOpenRouterClient } from '@/lib/ai/client';
 import { DOCUMENT_TYPES, DOCUMENT_TYPE_VALUES } from '@/lib/documents';
 import type { Criticality, ExtractedDocument, RawExtraction } from '@/lib/types';
+import { recordAiExtractionAudit } from '@/lib/arkiv/ai-audit';
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -164,5 +165,15 @@ export async function extractDocumentFields(
       raw = {};
     }
   }
-  return normalizeExtraction(raw);
+  const extracted = normalizeExtraction(raw);
+
+  // Registrar auditoría en Arkiv de forma asíncrona (no bloquea)
+  recordAiExtractionAudit({
+    detectedType: extracted.document_type,
+    confidence: extracted.confidence,
+    model: AI_EXTRACTION_MODEL,
+    summary: extracted.summary || 'Sin resumen',
+  });
+
+  return extracted;
 }

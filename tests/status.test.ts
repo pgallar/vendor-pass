@@ -8,6 +8,7 @@ const baseDoc = (overrides: Partial<VendorDocument>): VendorDocument => ({
   criticality: 'critical', file_url: null, file_hash: null, notes: null,
   created_at: '', updated_at: '',
   lifecycle_status: 'anchored', anchored_at: null, arkiv_entity_key: null,
+  supersedes_document_id: null, superseded_by_document_id: null,
   ...overrides,
 });
 

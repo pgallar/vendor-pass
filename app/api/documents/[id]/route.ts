@@ -3,6 +3,8 @@ import { requireUser } from '@/lib/supabase/api-auth';
 import { getStore } from '@/lib/arkiv/validations';
 import { documentToValidationEntity } from '@/lib/arkiv/entity';
 import { immutableFieldsChanged } from '@/lib/documents/lifecycle';
+import { recordDocumentEvent } from '@/lib/events/record';
+import { diffDocumentFields } from '@/lib/events/payload';
 import type { VendorDocument } from '@/lib/types';
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -71,14 +73,48 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     await getStore().upsert(documentToValidationEntity(typed, vendor));
   }
 
+  const changes = diffDocumentFields(currentDoc, typed);
+  if (Object.keys(changes).length > 0) {
+    await recordDocumentEvent({
+      documentId: id,
+      eventType: 'updated',
+      actorUserId: auth.user.id,
+      payload: { changes },
+      supabase: auth.supabase,
+    });
+    if (changes.file_hash) {
+      await recordDocumentEvent({
+        documentId: id,
+        eventType: 'file_replaced',
+        actorUserId: auth.user.id,
+        payload: {
+          oldHash: changes.file_hash.from as string | null,
+          newHash: changes.file_hash.to as string | null,
+        },
+        supabase: auth.supabase,
+      });
+    }
+  }
+
   return NextResponse.json({ document: doc });
 }
 
-export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireUser();
   if (auth.error) return auth.error;
 
   const { id } = await params;
+  const body = await req.json().catch(() => ({}));
+  const reason = typeof body.reason === 'string' ? body.reason : '';
+
+  await recordDocumentEvent({
+    documentId: id,
+    eventType: 'revoked',
+    actorUserId: auth.user.id,
+    payload: { reason },
+    supabase: auth.supabase,
+  });
+
   const { error } = await auth.supabase.from('documents').delete().eq('id', id);
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   await getStore().remove(id);

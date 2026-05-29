@@ -3,6 +3,8 @@ import { supabaseAdmin } from '@/lib/supabase/server';
 import { getStore } from '@/lib/arkiv/validations';
 import { documentToValidationEntity } from '@/lib/arkiv/entity';
 import { writeSyncState } from '@/lib/arkiv/sync-state';
+import { recordDocumentEvent } from '@/lib/events/record';
+import { documentStatus } from '@/lib/status';
 import type { VendorDocument } from '@/lib/types';
 
 export type SyncDocumentsResult = {
@@ -29,10 +31,11 @@ export async function syncDocumentsToArkiv(options: SyncOptions = {}): Promise<S
   if (error) throw error;
 
   const typed = (allDocs ?? []) as VendorDocument[];
+  const active = typed.filter(d => !d.superseded_by_document_id);
   // El sync masivo solo re-ancla documentos ya anclados (mantiene su status al día).
   // Los borradores quedan fuera y se reportan como pendientes de anclaje.
-  const anchored = typed.filter(d => d.lifecycle_status === 'anchored');
-  const pendingAnchor = typed.length - anchored.length;
+  const anchored = active.filter(d => d.lifecycle_status === 'anchored');
+  const pendingAnchor = active.length - anchored.length;
 
   const { data: vendors } = await sb.from('vendors').select('id,name,owner_email,owner_name');
   const vendorById = new Map((vendors ?? []).map(v => [v.id, v]));
@@ -49,7 +52,22 @@ export async function syncDocumentsToArkiv(options: SyncOptions = {}): Promise<S
 
   for (const d of anchored) {
     try {
-      await store.upsert(documentToValidationEntity(d, vendorById.get(d.vendor_id), syncedAt));
+      const existing = await store.getByDocumentId(d.id);
+      const oldStatus = existing?.entity.status ?? documentStatus(d);
+      const entity = documentToValidationEntity(d, vendorById.get(d.vendor_id), syncedAt);
+      const newStatus = entity.status;
+
+      if (newStatus !== oldStatus) {
+        await recordDocumentEvent({
+          documentId: d.id,
+          eventType: 'status_recomputed',
+          actorUserId: null,
+          payload: { oldStatus, newStatus },
+          supabase: sb,
+        });
+      }
+
+      await store.upsert(entity);
       result.synced++;
     } catch (err) {
       result.failed++;

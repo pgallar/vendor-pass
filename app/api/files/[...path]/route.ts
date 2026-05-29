@@ -17,7 +17,6 @@ export async function GET(
 
   try {
     const { body, contentType, contentLength } = await getEvidenceObject(key);
-    const bytes = await body.transformToByteArray();
     const headers = new Headers({
       'Content-Type': contentType,
       'Cache-Control': 'private, max-age=3600',
@@ -25,7 +24,7 @@ export async function GET(
     if (contentLength != null) {
       headers.set('Content-Length', String(contentLength));
     }
-    return new Response(bytes, { headers });
+    return new Response(body.transformToWebStream(), { headers });
   } catch {
     return new Response('Not found', { status: 404 });
   }

@@ -58,6 +58,8 @@ function baseDoc(overrides: Partial<VendorDocument>): VendorDocument {
     lifecycle_status: 'anchored',
     anchored_at: '2025-01-01T00:00:00Z',
     arkiv_entity_key: null,
+    supersedes_document_id: null,
+    superseded_by_document_id: null,
     ...overrides,
   };
 }

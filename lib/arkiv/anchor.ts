@@ -2,6 +2,8 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { getStore } from '@/lib/arkiv/validations';
 import { documentToValidationEntity } from '@/lib/arkiv/entity';
 import { canAnchor } from '@/lib/documents/lifecycle';
+import { recordDocumentEvent } from '@/lib/events/record';
+import { documentStatus } from '@/lib/status';
 import type { VendorDocument } from '@/lib/types';
 
 type VendorInfo = {
@@ -26,6 +28,7 @@ export async function anchorDocument(
   supabase: SupabaseClient,
   doc: VendorDocument,
   vendor: VendorInfo | null | undefined,
+  actorUserId?: string | null,
 ): Promise<AnchorResult> {
   const check = canAnchor(doc);
   if (!check.ok) throw new Error(check.reason);
@@ -53,5 +56,34 @@ export async function anchorDocument(
     .single();
   if (error || !updated) throw new Error(error?.message ?? 'No se pudo persistir el anclaje');
 
-  return { document: updated as VendorDocument, arkivEntityKey, anchoredAt };
+  const anchored = updated as VendorDocument;
+
+  await recordDocumentEvent({
+    documentId: doc.id,
+    eventType: 'anchored',
+    actorUserId: actorUserId ?? null,
+    payload: {
+      entityKey: arkivEntityKey ?? '',
+      status: documentStatus(anchored),
+      fileHash: anchored.file_hash ?? null,
+    },
+    supabase,
+  });
+
+  if (anchored.supersedes_document_id) {
+    await supabase
+      .from('documents')
+      .update({ superseded_by_document_id: doc.id })
+      .eq('id', anchored.supersedes_document_id);
+
+    await recordDocumentEvent({
+      documentId: doc.id,
+      eventType: 'renewed',
+      actorUserId: actorUserId ?? null,
+      payload: { supersedesDocumentId: anchored.supersedes_document_id },
+      supabase,
+    });
+  }
+
+  return { document: anchored, arkivEntityKey, anchoredAt };
 }
