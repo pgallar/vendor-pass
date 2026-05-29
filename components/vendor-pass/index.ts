@@ -10,6 +10,7 @@ export { DocumentList } from './document-list'
 export { EmptyState } from './empty-state'
 export { FormField, Input, Textarea, Select, FileInput } from './form-field'
 export { Button } from './button'
+export { Avatar } from './avatar'
 
 export type { StatusBadgeProps } from './status-badge'
 export type { KpiCardProps } from './kpi-card'
