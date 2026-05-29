@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { requireUser } from '@/lib/supabase/api-auth';
 import { auditArkivParity } from '@/lib/arkiv/verify-parity';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   const auth = await requireUser();
   if (auth.error) return auth.error;

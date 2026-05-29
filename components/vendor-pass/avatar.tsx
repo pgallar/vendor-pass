@@ -12,9 +12,9 @@ interface AvatarProps {
 export function Avatar({ src, name, email, size = 40, className }: AvatarProps) {
   const dimension = { width: size, height: size };
   if (src) {
-    // URL externa de S3; <img> evita configurar dominios de next/image.
-    // eslint-disable-next-line @next/next/no-img-element
     return (
+      // URL externa de S3; <img> evita configurar dominios de next/image.
+      // eslint-disable-next-line @next/next/no-img-element
       <img
         src={src}
         alt={name ?? 'Avatar'}

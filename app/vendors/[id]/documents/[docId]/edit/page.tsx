@@ -2,7 +2,6 @@ import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { AppShell } from '@/components/vendor-pass/app-shell';
 import { PageHeader } from '@/components/vendor-pass/page-header';
-import { DocumentForm } from '@/components/vendor-pass/document-form';
 import { DocumentEventTimeline } from '@/components/vendor-pass/document-event-timeline';
 import { RenewDocumentButton } from '@/components/vendor-pass/renew-document-button';
 import { EditDocumentClient } from './edit-document-client';

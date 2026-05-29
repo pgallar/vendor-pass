@@ -1,5 +1,3 @@
-import { supabaseAdmin } from '@/lib/supabase/server';
-import { getStore } from '@/lib/arkiv/validations';
 import { auditArkivParity } from '@/lib/arkiv/verify-parity';
 
 async function main() {

@@ -27,7 +27,19 @@ export function ApiKeysManager() {
   }
 
   useEffect(() => {
-    load();
+    let cancelled = false;
+    void fetch('/api/api-keys')
+      .then(res => (res.ok ? res.json() : null))
+      .then(data => {
+        if (cancelled || !data) return;
+        setKeys(data.keys ?? []);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const activeCount = keys.length;

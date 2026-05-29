@@ -126,8 +126,11 @@ describe('MCP AI extract pipeline', () => {
     });
 
     expect(result).not.toBeNull();
-    expect(result?.extracted?.document_type).toBe('seguro_rc');
-    expect(result?.document.id).toBe('doc-new');
-    expect(result?.upload.fileUrl).toContain('test.pdf');
+    if (!result) throw new Error('expected result');
+    expect(result.extracted?.document_type).toBe('seguro_rc');
+    expect(result.document).not.toBeNull();
+    if (!result.document) throw new Error('expected document');
+    expect(result.document.id).toBe('doc-new');
+    expect(result.upload.fileUrl).toContain('test.pdf');
   });
 });

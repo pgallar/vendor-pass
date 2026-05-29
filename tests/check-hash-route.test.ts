@@ -4,7 +4,7 @@ import { createRateLimiter } from '@/lib/crypto/rate-limit';
 describe('createRateLimiter', () => {
   it('permite hasta el límite y luego bloquea dentro de la ventana', () => {
     const limiter = createRateLimiter({ limit: 3, windowMs: 1000 });
-    let now = 0;
+    const now = 0;
     const ip = '1.2.3.4';
     expect(limiter.check(ip, now).allowed).toBe(true);
     expect(limiter.check(ip, now).allowed).toBe(true);

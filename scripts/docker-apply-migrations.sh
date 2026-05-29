@@ -45,6 +45,22 @@ else
   echo "⊙ 0007_document_lifecycle.sql ya aplicada (columna lifecycle_status existe)"
 fi
 
+# 0008 document events
+if ! docker exec "$DB_CONTAINER" psql -U postgres -d postgres -tAc \
+  "SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='document_events'" | grep -q 1; then
+  apply "$ROOT/supabase/migrations/0008_document_events.sql"
+else
+  echo "⊙ 0008_document_events.sql ya aplicada (tabla document_events existe)"
+fi
+
+# 0009 vendor portal
+if ! docker exec "$DB_CONTAINER" psql -U postgres -d postgres -tAc \
+  "SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='vendor_portal_invites'" | grep -q 1; then
+  apply "$ROOT/supabase/migrations/0009_vendor_portal.sql"
+else
+  echo "⊙ 0009_vendor_portal.sql ya aplicada (tabla vendor_portal_invites existe)"
+fi
+
 # PostgREST cachea el schema al arrancar; recargar tras tablas nuevas.
 docker exec "$DB_CONTAINER" psql -U postgres -d postgres -c "NOTIFY pgrst, 'reload schema';" >/dev/null 2>&1 || true
 

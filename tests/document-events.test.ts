@@ -14,6 +14,7 @@ const baseDoc: VendorDocument = {
   created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z',
   lifecycle_status: 'anchored', anchored_at: null, arkiv_entity_key: null,
   supersedes_document_id: null, superseded_by_document_id: null,
+  review_status: 'approved', rejection_reason: null, submitted_by_portal: false, submitted_by: null,
 };
 
 function event(type: ArkivDocumentEvent['eventType'], occurredAt: string, payload = {}): ArkivDocumentEvent {

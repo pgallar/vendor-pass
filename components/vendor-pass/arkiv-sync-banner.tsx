@@ -5,12 +5,16 @@ import { cn } from '@/lib/utils';
 import { Database, Clock } from 'lucide-react';
 import { ArkivSyncActions } from './arkiv-sync-actions';
 
+const STALE_MS = 25 * 60 * 60 * 1000;
+
+function isSyncStale(completedAt: string): boolean {
+  return Date.now() - new Date(completedAt).getTime() > STALE_MS;
+}
+
 export function ArkivSyncBanner() {
   const state = readSyncState();
   const source = getStoreSource();
-  const stale =
-    state?.completedAt != null &&
-    Date.now() - new Date(state.completedAt).getTime() > 25 * 60 * 60 * 1000;
+  const stale = state?.completedAt != null && isSyncStale(state.completedAt);
 
   return (
     <div

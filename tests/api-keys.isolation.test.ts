@@ -7,7 +7,6 @@ import {
 import { auditArkivParity } from '@/lib/arkiv/verify-parity';
 
 const USER_A = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
-const USER_B = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
 const VENDOR_A = '11111111-1111-1111-1111-111111111111';
 const VENDOR_B = '22222222-2222-2222-2222-222222222222';
 
@@ -23,34 +22,6 @@ function chain(final: { data: Row[] | Row | null; error: null; count?: number })
     then: (resolve: (v: typeof final) => void) => Promise.resolve(final).then(resolve),
   };
   return self;
-}
-
-function mockSupabase(handlers: {
-  vendors?: Row[];
-  documents?: Row[];
-  vendorById?: Row | null;
-}) {
-  return {
-    from: vi.fn((table: string) => {
-      if (table === 'vendors') {
-        return {
-          select: vi.fn((_cols?: string, opts?: { count?: string; head?: boolean }) => {
-            if (opts?.head) {
-              return Promise.resolve({
-                count: handlers.vendors?.length ?? 0,
-                error: null,
-              });
-            }
-            return chain({ data: handlers.vendors ?? [], error: null });
-          }),
-        };
-      }
-      if (table === 'documents') {
-        return chain({ data: handlers.documents ?? [], error: null });
-      }
-      return chain({ data: [], error: null });
-    }),
-  };
 }
 
 describe('api-keys data layer — aislamiento por user_id', () => {
@@ -173,7 +144,7 @@ describe('api-keys data layer — aislamiento por user_id', () => {
 
 describe('auditArkivParity con userId', () => {
   it('filtra vendors y documents por dueño cuando hay userId', async () => {
-    const eqCalls: Array<[string, string]> = [];
+    const eqCalls: Array<[string, string, string]> = [];
     const inCalls: string[][] = [];
     const sb = {
       from: vi.fn((table: string) => {

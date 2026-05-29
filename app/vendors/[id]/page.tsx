@@ -19,6 +19,8 @@ import {
   buildAuthPassportPdfUrl,
   buildVerifyPageUrl,
 } from '@/lib/passport/verify-url';
+import { InviteVendor } from '@/components/vendor-pass/invite-vendor';
+import { PendingReviewsBadge } from '@/components/vendor-pass/pending-reviews-badge';
 import { passportPdfFilename } from '@/lib/passport/pdf-filename';
 import { generateQrDataUrl } from '@/lib/passport/qr';
 import { Building2, Mail, User, MapPin, Calendar, Plus, Pencil, ShieldCheck } from 'lucide-react';
@@ -54,6 +56,11 @@ export default async function VendorDetailPage({ params }: { params: Promise<{ i
   if (!vendor) notFound();
 
   const { data: documents } = await sb.from('documents').select('*').eq('vendor_id', id).order('expires_at');
+  const { count: pendingCount } = await sb
+    .from('documents')
+    .select('id', { count: 'exact', head: true })
+    .eq('vendor_id', id)
+    .eq('review_status', 'submitted');
   const ds: VendorDocument[] = documents ?? [];
   const v = vendor as Vendor;
   const status = vendorStatus(ds);
@@ -168,6 +175,17 @@ export default async function VendorDetailPage({ params }: { params: Promise<{ i
               <p className="text-sm text-foreground">{v.notes}</p>
             </div>
           )}
+        </section>
+
+        <div className="flex items-center gap-3">
+          <Link href={`/vendors/${id}/reviews`} className="inline-flex items-center gap-2 text-sm font-medium text-primary">
+            Revisiones del portal
+            <PendingReviewsBadge count={pendingCount ?? 0} />
+          </Link>
+        </div>
+
+        <section className="bg-card border border-border rounded-xl p-4">
+          <InviteVendor vendorId={id} />
         </section>
 
         <section aria-labelledby="docs-heading" className="bg-card border border-border rounded-xl p-4">

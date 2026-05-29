@@ -4,7 +4,7 @@ import { useCallback, useState } from 'react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/vendor-pass/button';
-import { Check, Copy, Download, ExternalLink, FileText, Link2, Loader2, QrCode, Share2 } from 'lucide-react';
+import { Check, Copy, Download, ExternalLink, Link2, Loader2, QrCode, Share2 } from 'lucide-react';
 
 function toAbsoluteUrl(href: string): string {
   if (href.startsWith('http://') || href.startsWith('https://')) return href;

@@ -16,6 +16,34 @@ export interface Vendor {
   created_at: string;
 }
 
+/** Estado del workflow de revisión de un documento. */
+export type ReviewStatus =
+  | 'portal_draft'
+  | 'submitted'
+  | 'approved'
+  | 'rejected'
+  | 'anchored';
+
+export type PortalRole = 'uploader' | 'viewer';
+
+/** Invitación al portal — NUNCA incluye el token en claro. */
+export interface PortalInvite {
+  id: string;
+  vendor_id: string;
+  email: string;
+  expires_at: string;
+  accepted_at: string | null;
+  created_by: string;
+  created_at: string;
+}
+
+export interface PortalMember {
+  vendor_id: string;
+  user_id: string;
+  role: PortalRole;
+  created_at: string;
+}
+
 export interface VendorDocument {
   id: string;
   vendor_id: string;
@@ -34,6 +62,10 @@ export interface VendorDocument {
   arkiv_entity_key: string | null;
   supersedes_document_id: string | null;
   superseded_by_document_id: string | null;
+  review_status: ReviewStatus;
+  rejection_reason: string | null;
+  submitted_by_portal: boolean;
+  submitted_by: string | null;
 }
 
 /** Tipos de evento del historial inmutable de un documento. */

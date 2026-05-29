@@ -9,6 +9,7 @@ const baseDoc = (overrides: Partial<VendorDocument>): VendorDocument => ({
   created_at: '', updated_at: '',
   lifecycle_status: 'anchored', anchored_at: null, arkiv_entity_key: null,
   supersedes_document_id: null, superseded_by_document_id: null,
+  review_status: 'approved', rejection_reason: null, submitted_by_portal: false, submitted_by: null,
   ...overrides,
 });
 

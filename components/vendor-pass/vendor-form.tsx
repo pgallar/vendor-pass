@@ -2,8 +2,6 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { AppShell } from '@/components/vendor-pass/app-shell';
-import { PageHeader } from '@/components/vendor-pass/page-header';
 import { Button } from '@/components/vendor-pass/button';
 import { FormField, Input, Textarea } from '@/components/vendor-pass/form-field';
 import { Building2, Mail, User, MapPin } from 'lucide-react';

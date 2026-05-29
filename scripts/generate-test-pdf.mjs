@@ -13,7 +13,7 @@ function escapePdfText(text) {
 }
 
 function buildCompliancePdf(lines) {
-  const body = lines.map((line, i) => `(${escapePdfText(line)}) Tj 0 -14 Td`).join('\n');
+  const body = lines.map(line => `(${escapePdfText(line)}) Tj 0 -14 Td`).join('\n');
   const stream = `BT /F1 11 Tf 50 750 Td ${body} ET`;
   const streamLen = Buffer.byteLength(stream, 'utf8');
 

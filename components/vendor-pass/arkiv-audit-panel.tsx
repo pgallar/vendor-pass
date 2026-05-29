@@ -25,7 +25,21 @@ export function ArkivAuditPanel() {
   }
 
   useEffect(() => {
-    load();
+    let cancelled = false;
+    void fetch('/api/arkiv/audit')
+      .then(async res => {
+        if (cancelled) return;
+        setLoading(false);
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          setError(data.error ?? 'Error cargando auditoría');
+          return;
+        }
+        setResult(await res.json());
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   if (loading) {

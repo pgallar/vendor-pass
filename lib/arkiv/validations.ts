@@ -62,7 +62,9 @@ function entityAttributes(entity: ValidationEntity) {
 }
 
 function expiresInSeconds(expiresAt: string): number {
+  if (!expiresAt) return 86_400 * 365 * 10; // 10 años por defecto si no expira
   const end = new Date(expiresAt + 'T23:59:59Z').getTime();
+  if (isNaN(end)) return 86_400 * 365 * 10;
   const diff = Math.floor((end - Date.now()) / 1000);
   return Math.max(diff + 86_400, 86_400);
 }
@@ -129,7 +131,7 @@ export function createArkivStore(): ValidationStore {
     const cached = entityKeyByDocumentId.get(documentId);
     if (cached) return cached;
     const result = await pub.buildQuery()
-      .where([eq('project', PROJECT_SLUG), eq('entityType', ENTITY_TYPE), eq('documentId', documentId)])
+      .where([eq('entityType', ENTITY_TYPE), eq('documentId', documentId)])
       .fetch();
     const key = result.entities[0]?.key;
     if (key) entityKeyByDocumentId.set(documentId, key);
@@ -137,12 +139,8 @@ export function createArkivStore(): ValidationStore {
   }
 
   async function queryByStatus(status: DocumentStatus): Promise<ValidationEntity[]> {
-    const result = await pub.buildQuery()
-      .where([eq('project', PROJECT_SLUG), eq('entityType', ENTITY_TYPE), eq('status', status)])
-      .withPayload(true)
-      .orderBy(asc('expiresAtMs', 'number'))
-      .fetch();
-    return result.entities.map(parseEntity);
+    const all = await queryAll();
+    return all.filter(e => e.status === status);
   }
 
   async function queryAll(): Promise<ValidationEntity[]> {
@@ -159,8 +157,11 @@ export function createArkivStore(): ValidationStore {
       const payload = jsonToPayload(entity);
       const attrs = entityAttributes(entity);
       const expiresIn = expiresInSeconds(entity.expiresAt);
+      console.log('upsert: Calling findEntityKey...');
       const existingKey = await findEntityKey(entity.documentId);
+      console.log(`upsert: findEntityKey returned ${existingKey}`);
       if (existingKey) {
+        console.log('upsert: Calling wallet.updateEntity...');
         await wallet.updateEntity({
           entityKey: existingKey,
           payload,
@@ -168,15 +169,19 @@ export function createArkivStore(): ValidationStore {
           contentType: 'application/json',
           expiresIn,
         });
+        console.log('upsert: wallet.updateEntity finished.');
       } else {
+        console.log('upsert: Calling wallet.createEntity...');
         const { entityKey } = await wallet.createEntity({
           payload,
           attributes: attrs,
           contentType: 'application/json',
           expiresIn,
         });
+        console.log('upsert: wallet.createEntity finished.');
         entityKeyByDocumentId.set(entity.documentId, entityKey);
       }
+      console.log('upsert: DONE');
     },
     async remove(documentId) {
       const key = await findEntityKey(documentId);
@@ -187,7 +192,7 @@ export function createArkivStore(): ValidationStore {
     },
     async getByDocumentId(documentId) {
       const result = await pub.buildQuery()
-        .where([eq('project', PROJECT_SLUG), eq('entityType', ENTITY_TYPE), eq('documentId', documentId)])
+        .where([eq('entityType', ENTITY_TYPE), eq('documentId', documentId)])
         .withPayload(true)
         .fetch();
       const row = result.entities[0];
@@ -199,12 +204,8 @@ export function createArkivStore(): ValidationStore {
       return queryAll();
     },
     async listByVendor(vendorId) {
-      const result = await pub.buildQuery()
-        .where([eq('project', PROJECT_SLUG), eq('entityType', ENTITY_TYPE), eq('vendorId', vendorId)])
-        .withPayload(true)
-        .orderBy(asc('expiresAtMs', 'number'))
-        .fetch();
-      return result.entities.map(parseEntity);
+      const all = await queryAll();
+      return all.filter(e => e.vendorId === vendorId);
     },
     async listExpired() {
       return queryByStatus('vencido');
