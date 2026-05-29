@@ -1,4 +1,5 @@
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { evidencePublicUrl } from '@/lib/storage/evidence-url';
 
 const MAX_BYTES = 10 * 1024 * 1024;
 const ALLOWED_TYPES = new Set([
@@ -17,6 +18,8 @@ function s3Client() {
     region: process.env.S3_REGION ?? 'us-east-1',
     endpoint,
     forcePathStyle: true,
+    requestChecksumCalculation: 'WHEN_REQUIRED',
+    responseChecksumValidation: 'WHEN_REQUIRED',
     credentials: {
       accessKeyId: process.env.S3_ACCESS_KEY ?? 'minioadmin',
       secretAccessKey: process.env.S3_SECRET_KEY ?? 'minioadmin',
@@ -24,9 +27,17 @@ function s3Client() {
   });
 }
 
-function publicUrl(bucket: string, key: string): string {
-  const base = (process.env.S3_PUBLIC_URL ?? process.env.S3_ENDPOINT ?? '').replace(/\/$/, '');
-  return `${base}/${bucket}/${key}`;
+export async function getEvidenceObject(key: string) {
+  const bucket = process.env.S3_BUCKET ?? 'vendor-pass-evidence';
+  const result = await s3Client().send(new GetObjectCommand({ Bucket: bucket, Key: key }));
+  if (!result.Body) {
+    throw new Error('Object body empty');
+  }
+  return {
+    body: result.Body,
+    contentType: result.ContentType ?? 'application/octet-stream',
+    contentLength: result.ContentLength,
+  };
 }
 
 export async function uploadEvidence(
@@ -42,7 +53,7 @@ export async function uploadEvidence(
     Body: buffer,
     ContentType: mime,
   }));
-  return { url: publicUrl(bucket, key) };
+  return { url: evidencePublicUrl(key) };
 }
 
 export function isAllowedMime(mime: string): boolean {
