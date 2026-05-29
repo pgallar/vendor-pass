@@ -8,12 +8,7 @@ import {
 import { auditArkivParity } from '@/lib/arkiv/verify-parity';
 import { getStore, getStoreSource } from '@/lib/arkiv/validations';
 import type { VendorDocument } from '@/lib/types';
-
-async function userVendorIds(supabase: SupabaseClient, userId: string): Promise<string[]> {
-  const { data, error } = await supabase.from('vendors').select('id').eq('user_id', userId);
-  if (error) throw new Error(error.message);
-  return (data ?? []).map((v: { id: string }) => v.id);
-}
+import { userVendorIds } from '@/lib/api-keys/scope';
 
 export async function listVendors(supabase: SupabaseClient, userId: string) {
   const { data: vendors, error } = await supabase

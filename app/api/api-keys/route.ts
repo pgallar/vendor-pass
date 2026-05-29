@@ -10,7 +10,7 @@ export async function GET() {
 
   const { data, error } = await auth.supabase
     .from('api_keys')
-    .select('id, name, key_prefix, last_used_at, created_at, revoked_at')
+    .select('id, name, key_prefix, last_used_at, created_at')
     .order('created_at', { ascending: false });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
@@ -28,8 +28,7 @@ export async function POST(req: Request) {
 
   const { count, error: countErr } = await auth.supabase
     .from('api_keys')
-    .select('id', { count: 'exact', head: true })
-    .is('revoked_at', null);
+    .select('id', { count: 'exact', head: true });
   if (countErr) return NextResponse.json({ error: countErr.message }, { status: 500 });
   if ((count ?? 0) >= MAX_ACTIVE_KEYS) {
     return NextResponse.json(
@@ -44,7 +43,14 @@ export async function POST(req: Request) {
     .insert({ user_id: auth.user.id, name, key_prefix: prefix, key_hash: hash })
     .select('id, name, key_prefix, created_at')
     .single();
-  if (error || !data) return NextResponse.json({ error: error?.message ?? 'Error creando la API key' }, { status: 400 });
+  if (error || !data) {
+    const msg =
+      error?.message ||
+      (error?.code === 'PGRST116'
+        ? 'No se pudo leer la API key recién creada (reiniciá PostgREST o ejecutá npm run db:migrate:docker).'
+        : 'Error creando la API key');
+    return NextResponse.json({ error: msg, code: error?.code }, { status: 400 });
+  }
 
   return NextResponse.json({ key: { ...data, plaintext } }, { status: 201 });
 }

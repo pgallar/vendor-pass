@@ -6,11 +6,7 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
   if (auth.error) return auth.error;
 
   const { id } = await params;
-  const { error } = await auth.supabase
-    .from('api_keys')
-    .update({ revoked_at: new Date().toISOString() })
-    .eq('id', id)
-    .is('revoked_at', null);
+  const { error } = await auth.supabase.from('api_keys').delete().eq('id', id);
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
 
   return NextResponse.json({ ok: true });

@@ -30,7 +30,7 @@ export function ApiKeysManager() {
     load();
   }, []);
 
-  const activeCount = keys.filter(k => !k.revoked_at).length;
+  const activeCount = keys.length;
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -111,7 +111,7 @@ export function ApiKeysManager() {
             id="key_name"
             value={name}
             onChange={e => setName(e.target.value)}
-            placeholder="Ej: Integración Claude MCP"
+            placeholder="Ej: Automatización n8n"
             leftAddon={<KeyRound size={15} />}
             className="min-h-11"
             disabled={activeCount >= MAX_ACTIVE_KEYS}
@@ -140,28 +140,23 @@ export function ApiKeysManager() {
           {keys.map(k => (
             <li key={k.id} className="flex items-center justify-between gap-3 py-3">
               <div className="min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">
-                  {k.name}
-                  {k.revoked_at && <span className="ml-2 text-xs text-destructive">(revocada)</span>}
-                </p>
+                <p className="text-sm font-medium text-foreground truncate">{k.name}</p>
                 <p className="text-xs text-muted-foreground font-mono">{k.key_prefix}</p>
                 <p className="text-[11px] text-muted-foreground">
                   Creada {new Date(k.created_at).toLocaleDateString('es-AR')}
                   {k.last_used_at ? ` · último uso ${new Date(k.last_used_at).toLocaleDateString('es-AR')}` : ' · sin usar'}
                 </p>
               </div>
-              {!k.revoked_at && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleRevoke(k.id)}
-                  leftIcon={<Trash2 size={14} />}
-                  className="text-destructive shrink-0 min-h-11"
-                >
-                  Revocar
-                </Button>
-              )}
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => handleRevoke(k.id)}
+                leftIcon={<Trash2 size={14} />}
+                className="text-destructive shrink-0 min-h-11"
+              >
+                Revocar
+              </Button>
             </li>
           ))}
         </ul>

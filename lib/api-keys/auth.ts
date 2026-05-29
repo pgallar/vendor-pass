@@ -12,7 +12,7 @@ function unauthorized(): ApiKeyAuth {
     userId: null,
     supabase: null,
     keyId: null,
-    error: NextResponse.json({ error: 'API key inválida o revocada' }, { status: 401 }),
+    error: NextResponse.json({ error: 'API key inválida o inexistente' }, { status: 401 }),
   };
 }
 
@@ -25,11 +25,11 @@ export async function requireApiKey(req: Request): Promise<ApiKeyAuth> {
   const admin = supabaseAdmin();
   const { data, error } = await admin
     .from('api_keys')
-    .select('id, user_id, revoked_at')
+    .select('id, user_id')
     .eq('key_hash', hashApiKey(token))
     .maybeSingle();
 
-  if (error || !data || data.revoked_at) return unauthorized();
+  if (error || !data) return unauthorized();
 
   // Marcar último uso (best-effort, sin bloquear la respuesta).
   void admin.from('api_keys').update({ last_used_at: new Date().toISOString() }).eq('id', data.id);

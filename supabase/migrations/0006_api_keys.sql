@@ -30,3 +30,6 @@ create policy "api_keys_update_own" on public.api_keys
 drop policy if exists "api_keys_delete_own" on public.api_keys;
 create policy "api_keys_delete_own" on public.api_keys
   for delete using (auth.uid() = user_id);
+
+-- PostgREST (rol authenticator → anon/authenticated/service_role) necesita grants explícitos.
+grant all on table public.api_keys to anon, authenticated, service_role;

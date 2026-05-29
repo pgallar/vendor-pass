@@ -88,7 +88,6 @@ export interface ApiKey {
   key_prefix: string;
   last_used_at: string | null;
   created_at: string;
-  revoked_at: string | null;
 }
 
 /** Respuesta de creación: incluye el texto plano visible UNA sola vez. */
