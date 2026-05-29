@@ -1,20 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { updateSession } from '@/lib/supabase/middleware';
-
-const PUBLIC_PREFIXES = [
-  '/login',
-  '/register',
-  '/auth',
-  '/forgot-password',
-  '/reset-password',
-  '/verify-email',
-  '/verify',
-  '/portal/accept',
-];
-
-function isPublicPath(pathname: string) {
-  return PUBLIC_PREFIXES.some(p => pathname === p || pathname.startsWith(`${p}/`));
-}
+import { isPublicPath } from '@/lib/auth/public-paths';
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -35,7 +21,7 @@ export async function middleware(request: NextRequest) {
 
   if (isPublicPath(pathname)) {
     if (user && (pathname === '/login' || pathname === '/register')) {
-      const next = request.nextUrl.searchParams.get('next') ?? '/';
+      const next = request.nextUrl.searchParams.get('next') ?? '/dashboard';
       return NextResponse.redirect(new URL(next, request.url));
     }
     return supabaseResponse;
