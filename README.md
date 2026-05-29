@@ -31,7 +31,28 @@ La app requiere **iniciar sesión o registrarse** (`/login`, `/register`). El st
 
 **Verificación de cuenta:** tras registrarte, debes confirmar tu correo. Los emails de auth (confirmación y recuperación de contraseña) se capturan en desarrollo con **Mailpit**: http://localhost:8025
 
-Las plantillas de correo usan la marca VendorPass (indigo/slate). En Docker, GoTrue las obtiene del servicio `email-templates` (`docker/email-templates/`). Con `npx supabase start`, las mismas plantillas se leen desde `supabase/config.toml`. En **Supabase hosted**, copiá el HTML de esos archivos en *Authentication → Email Templates* del dashboard.
+Las plantillas de correo usan la marca VendorPass (indigo/slate). En Docker, GoTrue las obtiene del servicio `email-templates` (`docker/email-templates/`). Con `npx supabase start`, las mismas plantillas se leen desde `supabase/config.toml`.
+
+#### Producción (Supabase hosted + Vercel)
+
+Si el correo de confirmación llega **sin diseño** o con `redirect_to=http://localhost:3000`:
+
+1. **Vercel** → Environment Variables → `NEXT_PUBLIC_APP_URL=https://vendor-pass.vercel.app` (redeploy tras cambiarla).
+2. **Supabase** → Authentication → URL Configuration:
+   - **Site URL:** `https://vendor-pass.vercel.app`
+   - **Redirect URLs:** `https://vendor-pass.vercel.app/**`, `https://vendor-pass.vercel.app/auth/callback`, `https://vendor-pass.vercel.app/auth/callback/**`
+3. **Supabase** → Authentication → Email Templates: pegar el HTML de `docker/email-templates/confirmation.html` (Confirm signup) y `recovery.html` (Reset password).
+
+Sincronización automática (Management API):
+
+```bash
+export SUPABASE_ACCESS_TOKEN="..."   # dashboard → Account → Access Tokens
+export SUPABASE_PROJECT_REF="nfcddbdctsfkxwajjkxw"  # ref del proyecto
+export APP_URL="https://vendor-pass.vercel.app"
+npx tsx scripts/sync-supabase-auth-config.ts
+```
+
+La app envía `emailRedirectTo` usando el origen del navegador en el cliente (no depende de un build con localhost).
 
 | Ruta | Uso |
 |------|-----|

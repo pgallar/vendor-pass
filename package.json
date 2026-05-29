@@ -18,7 +18,8 @@
     "smoke:profile": "tsx scripts/smoke-profile-api.ts",
     "smoke:mcp": "tsx scripts/smoke-mcp-isolation.ts",
     "smoke:mcp:ai": "tsx scripts/smoke-mcp-ai-extract.ts",
-    "smoke:passport": "tsx scripts/smoke-passport.ts"
+    "smoke:passport": "tsx scripts/smoke-passport.ts",
+    "sync:supabase-auth": "tsx scripts/sync-supabase-auth-config.ts"
   },
   "dependencies": {
     "@arkiv-network/sdk": "^0.6.8",
