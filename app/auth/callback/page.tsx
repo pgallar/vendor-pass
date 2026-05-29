@@ -120,6 +120,17 @@ function AuthCallbackHandler() {
         }
 
         setMessage('Vinculando datos…');
+
+        const fullName = session.user.user_metadata?.full_name as string | undefined;
+        const orgName = session.user.user_metadata?.organization as string | undefined;
+        if (fullName) {
+          await supabase.from('profiles').upsert({
+            id: session.user.id,
+            full_name: fullName,
+            ...(orgName ? { organization: orgName } : {}),
+          });
+        }
+
         const { data: claimed } = await supabase.rpc('claim_legacy_vendors');
         const dest = claimed && claimed > 0 ? `${next}?claimed=${claimed}` : next;
         router.replace(dest);

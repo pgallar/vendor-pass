@@ -11,9 +11,10 @@ import { Button } from '@/components/vendor-pass/button';
 import { FormField, Input } from '@/components/vendor-pass/form-field';
 import { PasswordInput } from '@/components/vendor-pass/password-input';
 import { PasswordStrengthMeter } from '@/components/vendor-pass/password-strength-meter';
-import { Mail } from 'lucide-react';
+import { Mail, User, Building2 } from 'lucide-react';
 
 type FieldErrors = {
+  name?: string;
   email?: string;
   password?: string;
   confirm?: string;
@@ -23,6 +24,8 @@ function RegisterForm() {
   const searchParams = useSearchParams();
   const next = searchParams.get('next') ?? '/';
 
+  const [name, setName] = useState('');
+  const [organization, setOrganization] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -39,12 +42,13 @@ function RegisterForm() {
 
   function validateAll(): boolean {
     const errors: FieldErrors = {
+      name: name.trim() ? undefined : 'El nombre es requerido.',
       email: validateEmail(email) ?? undefined,
       password: validatePassword(password) ?? undefined,
       confirm: validatePasswordConfirm(password, confirm) ?? undefined,
     };
     setFieldErrors(errors);
-    return !errors.email && !errors.password && !errors.confirm;
+    return !errors.name && !errors.email && !errors.password && !errors.confirm;
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -58,7 +62,13 @@ function RegisterForm() {
     const { error: signUpError } = await supabase.auth.signUp({
       email,
       password,
-      options: { emailRedirectTo: authCallbackUrl(next) },
+      options: {
+        emailRedirectTo: authCallbackUrl(next),
+        data: {
+          full_name: name.trim(),
+          ...(organization.trim() ? { organization: organization.trim() } : {}),
+        },
+      },
     });
     setLoading(false);
 
@@ -104,7 +114,7 @@ function RegisterForm() {
     );
   }
 
-  const hasErrors = !!(fieldErrors.email || fieldErrors.password || fieldErrors.confirm);
+  const hasErrors = !!(fieldErrors.name || fieldErrors.email || fieldErrors.password || fieldErrors.confirm);
 
   return (
     <div className="bg-card border border-border rounded-xl p-6 flex flex-col gap-6">
@@ -116,6 +126,33 @@ function RegisterForm() {
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
+        <FormField id="name" label="Nombre completo" required error={fieldErrors.name}>
+          <Input
+            id="name"
+            type="text"
+            autoComplete="name"
+            value={name}
+            onChange={e => setName(e.target.value)}
+            onBlur={() => setFieldError('name', name.trim() ? null : 'El nombre es requerido.')}
+            leftAddon={<User size={15} />}
+            error={!!fieldErrors.name}
+            className="min-h-11"
+            required
+          />
+        </FormField>
+
+        <FormField id="organization" label="Organización" hint="Opcional">
+          <Input
+            id="organization"
+            type="text"
+            autoComplete="organization"
+            value={organization}
+            onChange={e => setOrganization(e.target.value)}
+            leftAddon={<Building2 size={15} />}
+            className="min-h-11"
+          />
+        </FormField>
+
         <FormField id="email" label="Correo" required error={fieldErrors.email}>
           <Input
             id="email"
