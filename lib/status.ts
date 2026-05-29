@@ -20,22 +20,34 @@ export function documentStatus(doc: VendorDocument, now: Date = new Date()): Doc
   return 'vigente';
 }
 
-export function vendorStatus(docs: VendorDocument[], now: Date = new Date()): VendorStatus {
+/** Usa `status` pre-resuelto (p. ej. Arkiv on-chain) cuando está presente en el documento. */
+export function effectiveDocumentStatus(
+  doc: VendorDocument & { status?: DocumentStatus },
+  now: Date = new Date(),
+): DocumentStatus {
+  if (doc.status != null) return doc.status;
+  return documentStatus(doc, now);
+}
+
+export function vendorStatus(
+  docs: (VendorDocument & { status?: DocumentStatus })[],
+  now: Date = new Date(),
+): VendorStatus {
   const critical = docs.filter(d => d.criticality === 'critical');
   if (critical.length === 0) return 'ok';
-  const statuses = critical.map(d => documentStatus(d, now));
+  const statuses = critical.map(d => effectiveDocumentStatus(d, now));
   if (statuses.includes('vencido')) return 'bloqueado';
   if (statuses.includes('por_vencer')) return 'atencion';
   return 'ok';
 }
 
 export function vendorComplianceReasons(
-  docs: VendorDocument[],
+  docs: (VendorDocument & { status?: DocumentStatus })[],
   now: Date = new Date(),
 ): ComplianceReason[] {
   return docs
     .filter(d => d.criticality === 'critical')
-    .map(d => ({ doc: d, status: documentStatus(d, now) }))
+    .map(d => ({ doc: d, status: effectiveDocumentStatus(d, now) }))
     .filter(({ status }) => status !== 'vigente')
     .map(({ doc, status }) => ({
       documentId: doc.id,
