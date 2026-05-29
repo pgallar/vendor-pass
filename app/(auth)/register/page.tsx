@@ -22,7 +22,7 @@ type FieldErrors = {
 
 function RegisterForm() {
   const searchParams = useSearchParams();
-  const next = searchParams.get('next') ?? '/';
+  const next = searchParams.get('next') ?? '/dashboard';
 
   const [name, setName] = useState('');
   const [organization, setOrganization] = useState('');
@@ -219,7 +219,7 @@ function RegisterForm() {
       <p className="text-sm text-center text-muted-foreground">
         ¿Ya tenés cuenta?{' '}
         <Link
-          href={`/login${next !== '/' ? `?next=${encodeURIComponent(next)}` : ''}`}
+          href={`/login${next !== '/dashboard' ? `?next=${encodeURIComponent(next)}` : ''}`}
           className="text-primary font-medium"
         >
           Iniciá sesión

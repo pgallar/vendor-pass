@@ -16,7 +16,7 @@ function isEmailNotConfirmed(message: string) {
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get('next') ?? '/';
+  const next = searchParams.get('next') ?? '/dashboard';
   const authError = searchParams.get('error');
 
   const [email, setEmail] = useState('');
@@ -121,7 +121,7 @@ function LoginForm() {
 
       <p className="text-sm text-center text-muted-foreground">
         ¿No tienes cuenta?{' '}
-        <Link href={`/register${next !== '/' ? `?next=${encodeURIComponent(next)}` : ''}`} className="text-primary font-medium">
+        <Link href={`/register${next !== '/dashboard' ? `?next=${encodeURIComponent(next)}` : ''}`} className="text-primary font-medium">
           Regístrate
         </Link>
       </p>

@@ -8,7 +8,7 @@ import { LayoutDashboard, Users, CalendarClock, KeyRound, User } from 'lucide-re
 // ─── Nav config ───────────────────────────────────────────────────────────────
 
 const NAV_ITEMS = [
-  { label: 'Inicio', href: '/', icon: LayoutDashboard, match: (p: string) => p === '/' },
+  { label: 'Inicio', href: '/dashboard', icon: LayoutDashboard, match: (p: string) => p === '/dashboard' },
   { label: 'Proveedores', href: '/vendors', icon: Users, match: (p: string) => p.startsWith('/vendors') && !p.includes('/new') },
   { label: 'Vencimientos', href: '/expirations', icon: CalendarClock, match: (p: string) => p.startsWith('/expirations') },
   { label: 'Integr.', href: '/integrations', icon: KeyRound, match: (p: string) => p.startsWith('/integrations') },

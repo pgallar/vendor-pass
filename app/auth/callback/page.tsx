@@ -47,7 +47,7 @@ function readAuthType() {
 function AuthCallbackHandler() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get('next') ?? '/';
+  const next = searchParams.get('next') ?? '/dashboard';
   const [message, setMessage] = useState('Completando autenticación…');
   const started = useRef(false);
 

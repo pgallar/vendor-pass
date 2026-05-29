@@ -7,7 +7,7 @@ import { LayoutDashboard, Users, CalendarClock, ShieldCheck, Database, KeyRound 
 import { AuthUserFooter } from '@/components/vendor-pass/auth-user-footer';
 
 const NAV_ITEMS = [
-  { label: 'Dashboard', href: '/', icon: LayoutDashboard, match: (p: string) => p === '/' },
+  { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, match: (p: string) => p === '/dashboard' },
   { label: 'Proveedores', href: '/vendors', icon: Users, match: (p: string) => p.startsWith('/vendors') && p !== '/vendors/new' },
   { label: 'Vencimientos', href: '/expirations', icon: CalendarClock, match: (p: string) => p.startsWith('/expirations') },
   { label: 'Auditoría Arkiv', href: '/admin/arkiv', icon: Database, match: (p: string) => p.startsWith('/admin/arkiv') },
