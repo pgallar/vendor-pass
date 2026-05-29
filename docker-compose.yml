@@ -83,6 +83,7 @@ services:
       GOTRUE_MAILER_TEMPLATES_RECOVERY: http://email-templates/recovery.html
       GOTRUE_MAILER_SUBJECTS_CONFIRMATION: 'VendorPass: Confirma tu cuenta'
       GOTRUE_MAILER_SUBJECTS_RECOVERY: 'VendorPass: Restablece tu contraseña'
+      GOTRUE_RATE_LIMIT_EMAIL_SENT: 300
       GOTRUE_DB_AUTOMIGRATE: 'true'
     depends_on:
       db:
