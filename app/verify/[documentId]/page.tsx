@@ -1,7 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getStore, getStoreSource } from '@/lib/arkiv/validations';
+import { resolveValidationLookup } from '@/lib/arkiv/lookup';
+import { normalizeEvidenceUrl } from '@/lib/storage/evidence-url';
+import { getStoreSource } from '@/lib/arkiv/validations';
 import { PublicShell } from '@/components/vendor-pass/public-shell';
 import { StatusBadge } from '@/components/vendor-pass/status-badge';
 import { CopyVerifyLink } from '@/components/vendor-pass/copy-verify-link';
@@ -35,12 +37,13 @@ function CopyField({ label, value }: { label: string; value: string }) {
 
 export default async function VerifyPage({ params }: { params: Promise<{ documentId: string }> }) {
   const { documentId } = await params;
-  const lookup = await getStore().getByDocumentId(documentId);
-  const source = getStoreSource();
+  const lookup = await resolveValidationLookup(documentId);
+  const storeSource = getStoreSource();
 
   if (!lookup) notFound();
 
-  const { entity, entityKey } = lookup;
+  const { entity, entityKey, resolvedFrom } = lookup;
+  const evidenceUrl = normalizeEvidenceUrl(entity.fileUrl);
 
   return (
     <PublicShell>
@@ -52,7 +55,16 @@ export default async function VerifyPage({ params }: { params: Promise<{ documen
           </p>
         </div>
 
-        {source === 'memory' && (
+        {resolvedFrom === 'postgres' && storeSource === 'memory' && (
+          <div className="flex items-start gap-3 p-4 rounded-xl bg-secondary border border-border">
+            <AlertCircle size={18} className="text-muted-foreground shrink-0 mt-0.5" aria-hidden="true" />
+            <p className="text-sm text-muted-foreground">
+              Datos desde la base de aplicación. Ejecuta sincronización Arkiv para registro verificable en red.
+            </p>
+          </div>
+        )}
+
+        {storeSource === 'memory' && resolvedFrom === 'store' && (
           <div className="flex items-start gap-3 p-4 rounded-xl bg-secondary border border-border">
             <AlertCircle size={18} className="text-muted-foreground shrink-0 mt-0.5" aria-hidden="true" />
             <p className="text-sm text-muted-foreground">
@@ -96,7 +108,13 @@ export default async function VerifyPage({ params }: { params: Promise<{ documen
             </div>
             <div>
               <dt className="text-xs text-muted-foreground">Fuente</dt>
-              <dd className="font-medium mt-0.5 capitalize">{source === 'arkiv' ? 'Arkiv Network' : 'Memoria local'}</dd>
+              <dd className="font-medium mt-0.5 capitalize">
+                {resolvedFrom === 'postgres'
+                  ? 'Base de datos'
+                  : storeSource === 'arkiv'
+                    ? 'Arkiv Network'
+                    : 'Memoria local'}
+              </dd>
             </div>
           </dl>
 
@@ -124,9 +142,9 @@ export default async function VerifyPage({ params }: { params: Promise<{ documen
             </div>
           )}
 
-          {entity.fileUrl && (
+          {evidenceUrl && (
             <Link
-              href={entity.fileUrl}
+              href={evidenceUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="text-xs text-primary font-medium inline-flex items-center gap-1"
