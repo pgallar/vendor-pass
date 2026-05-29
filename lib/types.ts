@@ -63,3 +63,39 @@ export interface ExtractedDocument {
   confidence: number;             // 0..1
   fields_found: string[];         // claves con valor — para los sellos "✨ IA"
 }
+
+export interface Profile {
+  id: string;
+  full_name: string | null;
+  phone: string | null;
+  organization: string | null;
+  avatar_url: string | null;
+  updated_at: string;
+}
+
+/** Respuesta de GET /api/profile: perfil editable + datos de cuenta de solo lectura. */
+export interface ProfileResponse {
+  profile: Profile;
+  email: string | null;
+  email_confirmed_at: string | null;
+  created_at: string | null;
+}
+
+/** Metadatos de una API key — NUNCA incluye el secreto. */
+export interface ApiKey {
+  id: string;
+  name: string;
+  key_prefix: string;
+  last_used_at: string | null;
+  created_at: string;
+  revoked_at: string | null;
+}
+
+/** Respuesta de creación: incluye el texto plano visible UNA sola vez. */
+export interface ApiKeyCreated {
+  id: string;
+  name: string;
+  key_prefix: string;
+  created_at: string;
+  plaintext: string;
+}
