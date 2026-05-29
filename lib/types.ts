@@ -1,6 +1,7 @@
 export type Criticality = 'critical' | 'normal';
 export type DocumentStatus = 'vigente' | 'por_vencer' | 'vencido';
 export type VendorStatus = 'ok' | 'atencion' | 'bloqueado';
+export type LifecycleStatus = 'draft' | 'pending_anchor' | 'anchored';
 export type AnyStatus = DocumentStatus | VendorStatus;
 
 export interface Vendor {
@@ -28,6 +29,9 @@ export interface VendorDocument {
   notes: string | null;
   created_at: string;
   updated_at: string;
+  lifecycle_status: LifecycleStatus;
+  anchored_at: string | null;
+  arkiv_entity_key: string | null;
 }
 
 export interface VendorWithStatus extends Vendor {
