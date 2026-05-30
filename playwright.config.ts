@@ -1,15 +1,14 @@
 import { defineConfig, devices } from '@playwright/test';
 import path from 'node:path';
+import { getE2eBaseUrl, resolveE2eEnvName } from './tests/e2e/config';
 
 const STORAGE_STATE = path.resolve(process.cwd(), 'tests/e2e/.auth/storageState.json');
-
-const baseURL =
-  process.env.E2E_ENV === 'prod'
-    ? 'https://vendor-pass.vercel.app'
-    : 'http://localhost:3000';
+const e2eEnv = resolveE2eEnvName();
+const baseURL = getE2eBaseUrl(e2eEnv);
 
 export default defineConfig({
   testDir: './tests/e2e',
+  globalSetup: './tests/e2e/global-setup.ts',
   fullyParallel: false,
   workers: 1,
   retries: 0,
@@ -41,6 +40,7 @@ export default defineConfig({
     {
       name: 'full-system',
       testMatch: /full-system\.spec\.ts$/,
+      dependencies: ['documents'],
       use: { ...devices['Desktop Chrome'] },
     },
   ],

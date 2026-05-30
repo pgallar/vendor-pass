@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { getE2eBaseUrl, resolveE2eEnvName } from './config';
 
 export type StepKey =
   | 'landing'
@@ -32,16 +33,11 @@ export const STEP_ORDER: StepKey[] = [
   'logout',
 ];
 
-const ENV = process.env.E2E_ENV === 'prod' ? 'prod' : 'local';
-
-const URLS = {
-  local: { base: 'http://localhost:3000' },
-  prod: { base: 'https://vendor-pass.vercel.app' },
-} as const;
+const ENV = resolveE2eEnvName();
 
 export const env = {
   name: ENV,
-  base: URLS[ENV].base,
+  base: getE2eBaseUrl(ENV),
   loginPath: '/login',
   dashboardPath: '/dashboard',
   email: process.env.E2E_EMAIL ?? 'demo@moraiarkae.resend.app',

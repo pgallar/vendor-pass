@@ -1,15 +1,16 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { expect, type APIRequestContext } from '@playwright/test';
+import { getE2eBaseUrl, resolveE2eEnvName } from '../config';
 
 /** Ruta del estado de sesión persistido por auth.setup.ts y reutilizado por los specs. */
 export const STORAGE_STATE = path.resolve(process.cwd(), 'tests/e2e/.auth/storageState.json');
 
-const ENV = process.env.E2E_ENV === 'prod' ? 'prod' : 'local';
+const ENV = resolveE2eEnvName();
 
 export const env = {
   name: ENV,
-  base: ENV === 'prod' ? 'https://vendor-pass.vercel.app' : 'http://localhost:3000',
+  base: getE2eBaseUrl(ENV),
   email: process.env.E2E_EMAIL ?? 'demo@moraiarkae.resend.app',
   password: process.env.E2E_PASSWORD ?? '!DemoDemo',
   /** Si '1', falla (en vez de saltar) cuando la IA no está configurada. */
