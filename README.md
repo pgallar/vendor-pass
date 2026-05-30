@@ -171,6 +171,67 @@ Cada documento tiene una página de verificación sin login:
 
 El dashboard y `/expirations` leen vencimientos desde Arkiv (o memoria local si no hay credenciales).
 
+## Servidor MCP (asistentes de IA)
+
+VendorPass expone un **servidor MCP remoto** (transporte **Streamable HTTP**) para conectar asistentes de IA, IDEs o automatizaciones. No requiere instalar nada: solo la URL del endpoint y una API key.
+
+- **Endpoint (producción):** `https://vendor-pass.vercel.app/api/mcp`
+- **Endpoint (local):** `http://localhost:3000/api/mcp`
+- **Guía interactiva en la app:** Integraciones → [Guía MCP](https://vendor-pass.vercel.app/integrations/mcp) (`/integrations/mcp`)
+
+### 1. Obtener una API key
+
+En [Integraciones](https://vendor-pass.vercel.app/integrations) (`/integrations`) generá una API key y copiala al crearla (solo se muestra una vez). La clave tiene el prefijo `vp_`.
+
+### 2. Autenticación
+
+Cada solicitud debe enviar la API key en el header `Authorization`:
+
+```
+Authorization: Bearer vp_tu_clave_secreta
+```
+
+Sin una clave válida el servidor responde `401`. Si revocás la clave en Integraciones, deja de funcionar de inmediato.
+
+### 3. Configurar el cliente MCP
+
+La mayoría de clientes MCP remotos aceptan una URL y headers personalizados:
+
+```json
+{
+  "mcpServers": {
+    "vendorpass": {
+      "url": "https://vendor-pass.vercel.app/api/mcp",
+      "headers": {
+        "Authorization": "Bearer vp_tu_clave"
+      }
+    }
+  }
+}
+```
+
+Consultá la documentación de tu herramienta para saber dónde pegar este bloque (archivo de configuración MCP, panel de integraciones, variables de entorno, etc.) y reiniciá el cliente después de guardar.
+
+### 4. Probar la conexión
+
+Con el cliente conectado, pedile por ejemplo:
+
+- «¿Qué proveedores tengo en estado de atención o bloqueados?»
+- «Listá documentos por vencer.»
+- «Generá un reporte de auditoría Arkiv.»
+- «Dá de alta un proveedor y subí su póliza ART.»
+
+### Herramientas disponibles
+
+| Categoría | Herramientas |
+|-----------|--------------|
+| Lectura | `list_vendors`, `get_vendor`, `get_vendor_compliance`, `list_documents`, `list_expirations`, `verify_document`, `arkiv_audit`, `arkiv_report` |
+| Proveedores | `create_vendor`, `update_vendor`, `delete_vendor` |
+| Documentos | `create_document`, `create_document_with_file`, `create_document_from_file_with_ai`, `update_document`, `delete_document` |
+| Archivos / IA | `upload_vendor_file`, `extract_document_fields` (extracción IA con OpenRouter) |
+
+> **Desarrollo local con stdio:** existe un paquete opcional en `mcp-server/` para probar MCP vía proceso stdio. Para uso normal preferí el endpoint remoto `/api/mcp` descrito arriba. Ver [`mcp-server/README.md`](mcp-server/README.md).
+
 ## Subida de evidencia (S3 / MinIO)
 
 Al crear un documento puedes subir PDF o imagen:
