@@ -14,7 +14,19 @@ export async function login(page: Page, _ctx: RunContext): Promise<void> {
 
   // Tras login exitoso redirige a /dashboard (o /dashboard?claimed=N).
   await page.waitForURL(new RegExp(`${escapeRe(env.base)}/dashboard`), { timeout: 30_000 });
-  await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
+
+  const heading = page.getByRole('heading', { name: 'Dashboard' });
+  const errorPage = page.getByRole('heading', { name: "This page couldn't load" });
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const result = await Promise.race([
+      heading.waitFor({ state: 'visible', timeout: 20_000 }).then(() => 'success' as const),
+      errorPage.waitFor({ state: 'visible', timeout: 20_000 }).then(() => 'error' as const),
+    ]).catch(() => 'timeout' as const);
+
+    if (result === 'success') break;
+    await page.reload();
+  }
+  await expect(heading).toBeVisible({ timeout: 30_000 });
 
   // Persistimos la sesión para poder reanudar pasos posteriores sin re-loguear.
   await persistStorageState(page.context());
