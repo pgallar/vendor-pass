@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
-import { BookOpen, Users, FileCheck2, Link2, BadgeCheck, UserPlus, BellRing } from 'lucide-react';
+import { BookOpen, Users, FileCheck2, Link2, BadgeCheck, UserPlus, BellRing, Plug } from 'lucide-react';
 
 export type DocNavItem = {
   label: string;
@@ -16,4 +16,5 @@ export const DOC_NAV: DocNavItem[] = [
   { label: 'Pasaporte', href: '/docs/pasaporte', description: 'Pasaporte de cumplimiento verificable.', icon: BadgeCheck },
   { label: 'Portal de proveedores', href: '/docs/portal', description: 'Autogestión y aprobación.', icon: UserPlus },
   { label: 'Alertas', href: '/docs/alertas', description: 'Notificaciones de vencimiento.', icon: BellRing },
+  { label: 'Servidor MCP', href: '/docs/mcp', description: 'Conectá asistentes de IA por MCP.', icon: Plug },
 ];
