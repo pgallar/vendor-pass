@@ -27,6 +27,15 @@ docker compose up
 
 ### Autenticación
 
+Para probar la demo, puedes utilizar las siguientes credenciales de prueba:
+- **Usuario:** `demo@moraiarkae.resend.app`
+- **Contraseña:** `!DemoDemo`
+
+URLs del sistema demo:
+- **Home:** https://vendor-pass.vercel.app/
+- **Dashboard:** https://vendor-pass.vercel.app/dashboard
+- **Login:** https://vendor-pass.vercel.app/login
+
 La app requiere **iniciar sesión o registrarse** (`/login`, `/register`). El stack Docker incluye **GoTrue** en el puerto 54321 (`/auth/v1/`).
 
 **Verificación de cuenta:** tras registrarte, debes confirmar tu correo. Los emails de auth (confirmación y recuperación de contraseña) se capturan en desarrollo con **Mailpit**: http://localhost:8025
@@ -102,6 +111,37 @@ Para subida de archivos sin Docker, levanta MinIO localmente o apunta `S3_*` a t
 | `npm run backfill` | Supabase → store Arkiv (una vez) |
 | `npm run sync:arkiv` | Mismo sync con log ISO (usado por el cron) |
 | `npm run verify:arkiv` | Auditoría paridad Postgres ↔ Arkiv |
+
+## Pruebas E2E (Playwright)
+
+Recorrido integral, visible en el navegador, disparado por **un único test orquestador**.
+
+```bash
+# Local (requiere `docker compose up` o `npm run dev` en :3000)
+npm run e2e:local
+
+# Producción (https://vendor-pass.vercel.app)
+npm run e2e:prod
+
+# Modo UI interactivo (paso a paso)
+npm run e2e:ui
+
+# Reanudar desde un paso concreto (clave o índice)
+E2E_ENV=local E2E_START_STEP=create-document npx playwright test
+
+# Detener antes de logout (genera artefactos para reanudar sin invalidar sesión)
+E2E_ENV=local E2E_END_STEP=settings npx playwright test
+
+# Reporte HTML + screenshots/trace/video
+npm run e2e:report   # ./tests/e2e/.report
+```
+
+- Credenciales por defecto: las del bloque "Autenticación" (sobreescribibles con `E2E_EMAIL` / `E2E_PASSWORD`).
+- Pasos disponibles para `E2E_START_STEP`: `landing, login, dashboard, vendors-list, create-vendor, vendor-detail, create-document, expirations, public-verify, integrations, docs, settings, logout`.
+- La reanudación usa `tests/e2e/.artifacts/{state.json, storageState.json}` (gitignored); no borres esa carpeta entre una corrida y su reanudación (evitá correr `logout` si querés retomar pasos autenticados).
+- Capturas y evidencia visual en `tests/e2e/.artifacts/screenshots/`.
+- **Local:** requiere la app en `:3000` con MinIO/S3 (`docker compose up`); la suite completa se validó en este entorno.
+- **Prod:** `e2e:prod` apunta a `https://vendor-pass.vercel.app` y requiere S3 configurado en Vercel; aún no verificado en verde en esta sesión.
 
 ## Verificación pública (Arkiv)
 

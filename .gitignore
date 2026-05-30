@@ -51,3 +51,10 @@ next-env.d.ts
 # MCP server
 mcp-server/node_modules
 mcp-server/dist
+
+# Playwright E2E
+/tests/e2e/.auth/
+/tests/e2e/.artifacts/
+/tests/e2e/.report/
+/test-results/
+/playwright/.cache/
