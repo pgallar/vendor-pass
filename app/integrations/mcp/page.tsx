@@ -147,6 +147,16 @@ export default function McpIntegrationDocPage() {
             </li>
           </ul>
         </DocBlock>
+
+        <DocBlock title="Documentación completa">
+          <p>
+            ¿Querés más detalle sobre cada herramienta y ejemplos de uso? Consultá la{' '}
+            <Link href="/docs/mcp" className="text-primary underline underline-offset-2">
+              guía del servidor MCP en la documentación
+            </Link>
+            .
+          </p>
+        </DocBlock>
       </div>
     </AppShell>
   );
