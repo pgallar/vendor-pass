@@ -71,6 +71,46 @@ Dado que Vercel requiere conectar tu cuenta personal de GitHub, este paso es el 
 | `ANCHOR_ON_SAVE` | `false` |
 | `EMAIL_NOTIFICATIONS_ENABLED` | `false` |
 
+### Almacenamiento S3 (evidencias y avatares)
+
+La app sube PDFs/imágenes vía `/api/upload` usando el cliente S3 (`@aws-sdk/client-s3`). En **local** usa MinIO (Docker); en **prod** usa el **protocolo S3 de Supabase Storage**.
+
+> **Error frecuente:** usar `NEXT_PUBLIC_SUPABASE_URL` (`https://<ref>.supabase.co`) como `S3_ENDPOINT`. Esa URL es REST/Auth, no S3. El SDK recibe JSON en lugar de XML y falla con `char '{' is not expected`.
+
+**En Supabase (una sola vez):**
+
+1. Dashboard → **Storage** → **Settings** → **S3 configuration**
+2. Generar **S3 Access Keys** (Access Key ID + Secret Access Key)
+3. Copiar **endpoint** y **region** de esa pantalla
+4. Crear bucket `vendor-pass-evidence` (público para lectura, equivalente a MinIO local)
+
+**Variables adicionales en Vercel (Production):**
+
+| Key | Valor | Notas |
+|---|---|---|
+| `S3_ENDPOINT` | `https://<PROJECT_REF>.storage.supabase.co/storage/v1/s3` | Subdominio **`storage`**, sufijo **`/storage/v1/s3`** |
+| `S3_ACCESS_KEY` | *(S3 Access Key ID de Supabase Storage)* | No confundir con `anon` ni `service_role` |
+| `S3_SECRET_KEY` | *(S3 Secret Access Key de Supabase Storage)* | |
+| `S3_BUCKET` | `vendor-pass-evidence` | Debe existir en Supabase Storage |
+| `S3_REGION` | *(región del proyecto, ej. `sa-east-1`)* | La misma que muestra S3 configuration |
+
+Ejemplo (proyecto demo):
+
+```env
+S3_ENDPOINT=https://nfcddbdctsfkxwajjkxw.storage.supabase.co/storage/v1/s3
+S3_BUCKET=vendor-pass-evidence
+S3_REGION=sa-east-1
+```
+
+Tras cambiar estas variables, **redeploy** en Vercel. Verificación rápida:
+
+```bash
+# Subida + recorrido E2E completo contra prod
+npm run e2e:prod
+```
+
+O manualmente: crear documento con PDF en prod y confirmar que aparece el hash SHA-256 antes de anclar.
+
 5. **Clic en "Deploy"**: Vercel comenzará a compilar la app (esta vez con suficiente RAM) y publicará tu DEMO.
 
 ---

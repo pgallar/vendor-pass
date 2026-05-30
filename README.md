@@ -140,8 +140,8 @@ npm run e2e:report   # ./tests/e2e/.report
 - Pasos disponibles para `E2E_START_STEP`: `landing, login, dashboard, vendors-list, create-vendor, vendor-detail, create-document, expirations, public-verify, integrations, docs, settings, logout`.
 - La reanudación usa `tests/e2e/.artifacts/{state.json, storageState.json}` (gitignored); no borres esa carpeta entre una corrida y su reanudación (evitá correr `logout` si querés retomar pasos autenticados).
 - Capturas y evidencia visual en `tests/e2e/.artifacts/screenshots/`.
-- **Local:** requiere la app en `:3000` con MinIO/S3 (`docker compose up`); la suite completa se validó en este entorno.
-- **Prod:** `e2e:prod` apunta a `https://vendor-pass.vercel.app` y requiere S3 configurado en Vercel; aún no verificado en verde en esta sesión.
+- **Local:** requiere la app en `:3000` con MinIO/S3 (`docker compose up`).
+- **Prod:** `e2e:prod` apunta a `https://vendor-pass.vercel.app`; requiere S3 en Vercel (ver [deploy Vercel](docs/vercel-deployment-plan.md#almacenamiento-s3-evidencias-y-avatares)).
 
 ## Verificación pública (Arkiv)
 
@@ -160,7 +160,12 @@ Al crear un documento puedes subir PDF o imagen:
 2. El hash SHA-256 se guarda en Postgres y se replica en Arkiv
 3. En `/verify` se muestra el hash certificado al momento del registro
 
-Bucket por defecto: `vendor-pass-evidence` (lectura pública en Docker local).
+| Entorno | Backend S3 | `S3_ENDPOINT` |
+|---------|--------------|---------------|
+| Local (Docker) | MinIO | `http://127.0.0.1:9010` (automático en compose) |
+| Prod (Vercel) | Supabase Storage (protocolo S3) | `https://<ref>.storage.supabase.co/storage/v1/s3` |
+
+Bucket por defecto: `vendor-pass-evidence`. Configuración prod: [docs/vercel-deployment-plan.md](docs/vercel-deployment-plan.md#almacenamiento-s3-evidencias-y-avatares).
 
 ## Sync diario Postgres → Arkiv
 
