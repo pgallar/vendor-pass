@@ -143,6 +143,25 @@ npm run e2e:report   # ./tests/e2e/.report
 - **Local:** requiere la app en `:3000` con MinIO/S3 (`docker compose up`).
 - **Prod:** `e2e:prod` apunta a `https://vendor-pass.vercel.app`; requiere S3 en Vercel (ver [deploy Vercel](docs/vercel-deployment-plan.md#almacenamiento-s3-evidencias-y-avatares)).
 
+### Pruebas E2E de Importación + IA + Visualización de Documentos (`documents`)
+
+Esta suite data-driven utiliza los 5 PDFs realistas en `tests/e2e/fixtures/` para validar la importación de archivos reales, la extracción de metadatos mediante IA (OpenRouter), y la visualización pública de la evidencia adjunta.
+
+```bash
+# Correr la suite de documentos (local)
+npm run e2e:docs:local
+
+# Correr la suite de documentos (producción)
+npm run e2e:docs:prod
+
+# Reporte HTML con trazas, videos y screenshots
+npm run e2e:report
+```
+
+- **Cobertura plena**: requiere `OPENROUTER_API_KEY` (para extracción de IA) y `S3_ENDPOINT` (para subida/visualización). Si faltan, los tests correspondientes se auto-saltan mediante anotaciones controladas. Puedes forzar que fallen en vez de saltarse usando `E2E_REQUIRE_AI=1` y `E2E_REQUIRE_STORAGE=1`.
+- **Inicio de sesión único**: usa `auth.setup.ts` para loguearse una sola vez y reutilizar la sesión a través de la configuración `storageState` de Playwright.
+- **Capturas de pantalla**: las capturas generadas se guardan en `tests/e2e/.artifacts/documents/` (por ejemplo, `ai-filled-*.png`, `verify-with-evidence.png`).
+
 ## Verificación pública (Arkiv)
 
 Cada documento tiene una página de verificación sin login:
